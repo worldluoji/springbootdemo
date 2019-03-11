@@ -1,0 +1,57 @@
+1. @Bean注解的使用方法：
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public TransferService transferService() {
+        return new TransferServiceImpl();
+    }
+
+}
+这个配置就等同于之前在xml里的配置：
+<beans>
+    <bean id="transferService" class="com.acme.TransferServiceImpl"/>
+</beans>
+Spring-Boot开始推崇去除（减少）配置文件的做法，因此建议用@Bean注解。
+
+2. 使用Rabbitmq
+1). import org.springframework.amqp.core.Queue;
+配置一个队列
+@Configuration
+public class SendConfig {
+
+    @Bean
+    public Queue luojiQueue() {
+        return new Queue("hello-luoji-queue");
+    }
+}
+
+2）.编写Sender
+主要是使用AmqpTemplate的convertAndSend，第一个参数为队列名，第二个为消息内容
+@Component
+public class Sender {
+
+    @Autowired
+    private AmqpTemplate amqpTemplate;
+
+    public void send() throws InterruptedException {
+        String msg = "hello world " + new Date();
+        this.amqpTemplate.convertAndSend("hello-luoji-queue", msg);
+ }
+
+3）.编写Reveiver
+注意接收方法上要加入RabbitListener注解指定队列名称
+@Component
+public class Receiver {
+
+    @RabbitListener(queues="hello-luoji-queue")
+    public void process(String msg) {
+        System.out.println(msg);
+    }
+}
+
+3. 配置文件中要添加RabbitMq的IP和端口号，以及连接的用户名和密码，就像连接数据库一样：
+spring.rabbitmq.host=127.0.0.1
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest

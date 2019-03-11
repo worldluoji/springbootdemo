@@ -1,0 +1,51 @@
+1. 由于默认源速度太慢，修改maven下载源：
+如果maven是idea集成的，就在你的安装目录下
+D:\Program Files\JetBrains\IntelliJ IDEA 2017.1.2\plugins\maven\lib\maven3\conf\settings.xml 
+找到settings.xml；
+如果不是开发工具集成的，就在C:\Users\YourUserName\.m2下面.
+
+在settings.xml中找到mirrors节点，修改里面的内容为：
+<mirrors>
+	<mirror>
+	  <id>alimaven</id>
+	  <mirrorOf>central</mirrorOf>
+	  <name>aliyun maven</name>
+	  <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+	</mirror>
+</mirrors>
+
+最后在idea的settings中搜索maven, 把User setting files和 Locaol repository都设置为override即可。
+
+2. pom.xml文件中要指定Maven远程仓库为spring的，阿里云仓库没有Eureka包。
+<repositories>
+	<repository>
+		<id>spring-milestones</id>
+		<name>Spring Milestones</name>
+		<url>https://repo.spring.io/milestone</url>
+	</repository>
+</repositories>
+
+3. Eureka依赖包，在使用idea创建工程时添加即可。手动添加到pom.xml如下：
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+
+4. 单机环境：配置文件中配置
+spring.application.name=eureka-server
+server.port=8761
+#是否将自己注册到eureka-server 默认为true
+eureka.client.registerWithEureka=false 
+#是否从eureka-server获取注册信息，默认为true
+eureka.client.fetchRegistry=false
+
+5. 在SpringBoot启动类加入@EnableEurekaServer
+@EnableEurekaServer
+@SpringBootApplication
+public class HelloApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(HelloApplication.class, args);
+    }
+
+}

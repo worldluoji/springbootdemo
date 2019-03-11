@@ -1,0 +1,44 @@
+1. 交换器通过路由键和队列绑定在一起。 direct交换器相当于一种开发订阅模式，
+交换器拿到一个路由键后，会去看路由键-队列的绑定关系，从而发到对应的队列。
+
+2. 接收端，要指定交换器，路由键和队列，示例代码如下：
+@Component
+@RabbitListener(bindings=@QueueBinding(
+        value=@Queue(value="${mq.config.queue.error}", // 队列    autoDelete="true"), 
+        exchange=@Exchange(value="${mq.config.exchange}", // 交换器     type=ExchangeTypes.DIRECT),
+        key="${mq.config.queue.error.routing.key}" // 路由键
+))
+public class ErrorReceiver {
+
+    @RabbitHandler
+    public void process(String msg) {
+        System.out.println("Receive Error : " + msg);
+    }
+}
+
+3. 发送端只需要指定交换器和路由键，示例代码如下：
+@Component
+public class Sender {
+
+    @Autowired
+    private AmqpTemplate rabbitmqTemplate;
+
+    @Value("${mq.config.exchange}")
+    private String exchange;
+
+    @Value("${mq.config.queue.error.routing.key}")
+    private String routingKey;
+
+    public void send() throws InterruptedException {
+        String msg = "Hello" + new Date();
+        // 交换器，路由键，消息内容
+        this.rabbitmqTemplate.convertAndSend(this.exchange, this.routingKey, msg);
+    }
+}
+
+4.autoDelete="true"实际是指定了消息是否会持久化。
+比如发送端一直在发送，但接收端由于异常没有收到，如果该选项为false,则接收端恢复正常后会接着之前没有接收到的接收（1,2,3,4........5,6,7,8,9）。原理是RabbitMq有Ack确认机制，发现接收端没收到就把消息缓存了。
+
+5. RabbitMq中为什么信道的概念？
+因为如果发一次消息就建立一个TCP连接消耗太大（每次都要三次握手，四次挥手）， 不如就建立一个TCP，然后内部划分信道（轻量级），去处理消息。
+
