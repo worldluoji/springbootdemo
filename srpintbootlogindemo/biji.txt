@@ -1,0 +1,40 @@
+1.@GetMapping(path="/login")就相当于@RequestMapping(path="/login", method=RequestMethod.GET)
+
+2.@RestController相当于@Controller + @ResponseBody
+
+3.@ResponseBody的作用：表示返回值就是Response本身，不需传递到View被渲染，用户直接得到该方法的而返回值。
+
+4.@RequestParam表示将HTTP请求中用户传入的参数映射到括号中指定的变量中。例如，表单中的name=password的属性就应能映射到下面的pssword入参之中。
+
+示例如下：
+@GetMapping(path="/add")
+@ResponseBody
+public String addNewUser(@RequestParam String name, @RequestParam String email,
+                                       @RequestParam String password, User user) {
+    user.setName(name);
+    user.setEmail(email);
+    user.setPassword(password);
+    userRepository.save(user);
+    log.info(user.toString() + "Saved to the repo");
+    return "Saved";
+}
+
+5. JPA数据源配置
+1）首先要在application.properties里配置
+spring.datasource.username=luoji
+spring.datasource.password=199114
+spring.datasource.url=jdbc:mysql://localhost:3306/springdb?serverTimezone=GMT%2B8
+spring.jpa.hibernate.ddl-auto=create
+server.port=9090
+其中，spring.jpa.hibernate.ddl-auto=create为开发模式，即每次应用启动都重新创建一个表，原有表清空。如果不想使用，则设置为none即可。
+
+6. 关于CrudRepository，只需要实现该接口，Spring就会自动为你进行它的实现，而且通过查看CrudRepository的源码，已经定义了findById,findAll等方法。
+示例代码如下：
+import org.springframework.data.repository.CrudRepository;
+import java.util.List;
+public interface  UserRepository extends CrudRepository<User, Integer> {
+    List<User> findByEmail(String email);
+    void deleteByEmail(String email); // 只需自己添加接口即可
+}
+
+<User, Integer> 第一个是对象模型（一个带有Getter,Setter的JavaBean），第二个参数表示主键的数据类型，这里ID是Integer.
