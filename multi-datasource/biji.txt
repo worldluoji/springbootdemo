@@ -26,6 +26,7 @@ public class TestServiceImpl {
 
 6. DataSourceTransactionManager 提供了很多事务控制方法，把它交给spring去管理，spring底层进行事务控制时就可以调用这个对象里面相应的方法。它要依赖于一个数据源对象dataSource。
 
+
 主要思想就是去除数据源相关的自动配置，自己去写。示例代码如下：
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class,
         DataSourceTransactionManagerAutoConfiguration.class,
@@ -75,3 +76,8 @@ public class MultiDatasourceApplication {
             return new DataSourceTransactionManager(barDataSource);
         }
 }
+
+7. 如果你的终端支持ANSI，设置彩色输出会让日志更具可读性。通过在application.properties中设置spring.output.ansi.enabled参数来支持。
+NEVER：禁用ANSI-colored输出（默认项）
+DETECT：会检查终端是否支持ANSI，是的话就采用彩色输出（推荐项）
+ALWAYS：总是使用ANSI-colored格式输出，若终端不支持的时候，会有很多干扰信息，不推荐使用

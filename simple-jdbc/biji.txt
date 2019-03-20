@@ -1,0 +1,79 @@
+1. @Bean注解用在方法上的意义：
+明确地告诉被注释的方法，你给我产生一个Bean，然后交给Spring容器，剩下的你就别管。
+
+示例代码如下：
+@Bean
+public SimpleJdbcInsert simpleJdbcInsert(JdbcTemplate jdbcTemplate) {
+    return new SimpleJdbcInsert(jdbcTemplate).withTableName("FOO").usingGeneratedKeyColumns("ID");
+}
+
+
+2. forEach用法：
+fooList.forEach(f -> log.info("Foo: {}", f));
+fooList是一个List, f是其中的一个元素。
+
+
+3. mysql表创建好后添加自增和主键
+alter table table1 add id int auto_increment primary key (id不存在时)
+alter table table1 modify id int auto_increment primary key （id已经存在时）
+自增字段，一定要设置为primary key.
+
+4. JdbcTemplate的三种查询方式query（返回查询结果对象列表）, queryForObject（返回一个查询对象）, queryForList（返回指定类型结果列表）：
+public void showData() {
+    log.info("count {}", jdbcTemplate.queryForObject("SELECT COUNT(*) FROM FOO", Long.class));
+    List<String> list = jdbcTemplate.queryForList("SELECT BAR FROM FOO", String.class);
+    list.forEach(s -> log.info("Bar {}", s));
+
+    List<Foo> fooList = jdbcTemplate.query("SELECT * FROM FOO", new RowMapper<Foo>() {
+        @Override
+        public Foo mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return Foo.builder()
+                    .id(rs.getLong(1))
+                    .bar(rs.getString(2))
+                    .build();
+        }
+    });
+    fooList.forEach(f -> log.info("Foo {}", f));
+}
+
+5. SimpleJdbcInsert的用法：
+1). 首先要在容器里定义一个SimpleJdbcInsert对象：
+@Bean
+public SimpleJdbcInsert simpleJdbcInsert(JdbcTemplate jdbcTemplate) {
+    return new SimpleJdbcInsert(jdbcTemplate).withTableName("FOO").usingGeneratedKeyColumns("ID");
+}
+
+2). 用SimpleJdbcInsert插入即可，使用map指定键值对，key时表的列名称，value是值
+public void insertData() {
+    Arrays.asList("ccc", "ddd").forEach(bar -> {
+        jdbcTemplate.update("INSERT INTO FOO (BAR) VALUES (?)", bar);
+    });
+
+    Map<String, String> map = new HashMap<>();
+    map.put("BAR", "eee");
+    Number id = simpleJdbcInsert.executeAndReturnKey(map);
+    log.info("id of new data eee is {}", id.longValue());
+}
+也可以直接使用jdbcTemplate.update + sql语句的方式插入。
+
+6. 批量插入，也有两种方式，一种是JdbcTemplate的batchUpdate方法 + SQL,另一种是用namedParameterJdbcTemplate + ArrayList的方式，示例代码如下：
+public void batchUpdate() {
+    jdbcTemplate.batchUpdate("INSERT INTO FOO (BAR) VALUES(?)",
+            new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                    ps.setString(1, "s" + i);
+                }
+
+                @Override
+                public int getBatchSize() {
+                    return 2;
+                }
+            });
+
+    List<Foo> list = new ArrayList<>();
+    list.add(Foo.builder().id(100L).bar("tt1").build());
+    list.add(Foo.builder().id(108L).bar("tt2").build());
+    namedParameterJdbcTemplate.batchUpdate("INSERT INTO FOO (ID, BAR) VALUES(:id, :bar)",
+            SqlParameterSourceUtils.createBatch(list));
+}
