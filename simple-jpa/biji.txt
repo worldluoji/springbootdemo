@@ -1,0 +1,37 @@
+1. JPA常用注解：
+@Entity  表示类与数据库中表是映射关系（OR-MAPPING）
+@Table(name="T_MENU")  指定与数据库中哪张表对应，如果不指定，就是和类名一致
+@Builder 可以使用构造器创建对象（构造器模式）
+@Data 使类天然拥有getter,setter,toString()方法
+@NoArgsConstructor 使类拥有无参构造方法
+@AllArgsConstructor 使类拥有满参数的构造方法
+public class Coffee {
+	......
+}
+
+2.@Id 
+@Id 标注用于声明一个实体类的属性映射为数据库的主键列。该属性通常置于属性声明语句之前，可与声明语句同行，也可写在单独行上。 @Id标注也可置于属性的getter方法之前。
+
+3.@GeneratedValue
+@GeneratedValue 用于标注主键的生成策略，自动选择一个最适合底层数据库的主键生成策略：SqlServer对应identity，MySQL通过strategy 属性指定。默认情况下，JPA  对应 auto increment。 
+在javax.persistence.GenerationType中定义了以下几种可供选择的策略： 
+–IDENTITY：采用数据库ID自增长的方式来自增主键字段，Oracle 不支持这种方式； 
+–AUTO： JPA自动选择合适的策略，是默认选项； 
+–SEQUENCE：通过序列产生主键，通过@SequenceGenerator 注解指定序列名，MySql不支持这种方式 
+–TABLE：通过表产生主键，框架借由表模拟序列产生主键，使用该策略可以使应用更易于数据库移植
+
+4. @Type type用于表示字段的实际星泪，parameters表示后缀
+@Column  用于表示该属性对应数据库中的一个字段
+@Type(type = "org.jadira.usertype.moneyandcurrency.joda.PersistentMoneyAmount",
+        parameters = {@org.hibernate.annotations.Parameter(name = "currencyCode", value = "CNY")})
+private Money price;
+
+5. joda-money第三方库常用于金融开发中，比如要表示100CNY，用它十分方便。
+
+6. Arrays.asList() vs Collections.singletonList()  
+Collections.singletonList(something)是不可变的，对Collections.singletonList(something)返回的列表所做的任何更改将导致UnsupportedOperationException 。
+Arrays.asList(something)允许Arrays.asList(something) 更改 
+
+7. 两个配置
+spring.jpa.hibernate.ddl-auto=update  根据实体自动创建数据表
+spring.jpa.show-sql=true  显示对应的sql语句
