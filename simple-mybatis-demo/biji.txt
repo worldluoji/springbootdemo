@@ -1,0 +1,39 @@
+1. SpringBoot使用mybatis需加入依赖包
+<dependency>
+	<groupId>org.mybatis.spring.boot</groupId>
+	<artifactId>mybatis-spring-boot-starter</artifactId>
+	<version>1.3.2</version>
+</dependency>
+
+2. ibatis可以使用xml做映射，也可以通过注解方式。现在一般都采用注解的方式：
+@Mapper
+public interface CoffeeMapper {
+
+    @Insert("insert into t_coffee(name, price, createTime, updateTime) values(#{name}, #{price}, now(), now())")
+    @Options(useGeneratedKeys = true)
+    Long save(Coffee coffee);
+
+    @Select("select * from t_coffee where id=#{id}")
+    Coffee findById(@Param("id") Long id);
+}
+option注解标签useGeneratedKeys=true表示使用数据库自动增长的主键，keyColumn用于指定数据库table中的主键，keyProperty用于指定传入对象的成员变量。 不指定keyColumn，则默认id为主键。
+
+3. map-underscore-to-camel-case = true 表示数据库中create_time就对应mybatis实体中的createTime, 将数据库的下划线形式自动转化为Java的驼峰形式
+@Select("select * from t_coffee where id = #{id}")
+@Results({
+        @Result(id = true, column = "id", property = "id"),
+        @Result(column = "create_time", property = "createTime"),
+        // map-underscore-to-camel-case = true 可以实现一样的效果
+        // @Result(column = "update_time", property = "updateTime"),
+})
+Coffee findById(@Param("id") Long id);
+
+
+4. 当我们自定义了枚举类型或者其他某个类型、个别值，需要在往数据库中存或者在数据库取出来时转换类型或者对值做某些处理，就可以继承BaseTypeHandler<T>，自己实现各种转换。
+一个setxxx方法，表示向PreparedStatement里面设置值。三个getxxx方法，一个是根据列名获取值，一个是根据列索引位置获取值，最后一个是存储过程。
+需要在配置文件中配置：
+mybatis.type-handlers-package=ccom.mybatis.simplemybatisdemo.handler 你定义的handler所在package.
+
+5.@MapperScan注解，指定basePackages，扫描mybatis Mapper接口类。
+
+6. 总结：使用MyBatis，需要创建对象实体，写@Mapper映射，如果有类型转换，比如100CNY保存在数据库中却是100这种，还要继承BaseTypeHandler，覆写写入数据库和读取数据库的类型转换。
