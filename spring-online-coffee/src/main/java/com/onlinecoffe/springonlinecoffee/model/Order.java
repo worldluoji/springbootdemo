@@ -1,0 +1,28 @@
+package com.onlinecoffe.springonlinecoffee.model;
+
+import lombok.*;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.List;
+
+@Entity
+@Table(name = "T_ORDER")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@ToString(callSuper = true)
+public class Order extends BaseEntity implements Serializable {
+    private String customer;
+
+    @ManyToMany
+    @JoinTable(name = "T_ORDER_COFFEE")
+    @OrderBy("id")
+    private List<Coffee> items;
+
+    @Enumerated
+    @Column(nullable = false)
+    private OrderState orderState;
+}
+
