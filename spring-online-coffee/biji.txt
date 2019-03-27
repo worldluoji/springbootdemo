@@ -17,3 +17,18 @@ if (latte.isPresent()) {
     log.info("Update INIT to PAID: {}", orderService.updateOrder(order, OrderState.PAID));
     log.info("Update PAID to INIT: {}", orderService.updateOrder(order, OrderState.INIT));
 }
+
+3. 什么时候应该使用缓存? 什么时候应该使用Redis?
+当读多写少的时候（比如读：写=10：1）就适合使用缓存。 如果读写1：1就不该使用缓存了。
+如果一个值长期不变， 而且可以接受一定的延迟更新，就没必要使用Redis了，直接放在Spring提供的缓存， 做个超时机制，超时后更新它即可；
+如果一个值在集群的多台机器中要求保证一致性，就要使用分布式缓存了，例如Redis集群。
+Redis相比Memcached可以持久化数据，支持主备模式，哨兵模式，集群模式。Redis的有序集合也适合做排行榜，或者缓存论坛热门帖子等等。
+
+4. @Cacheable 如果结果已经在缓存里面了就从缓存里取；否则就执行后将结果放到缓存里。
+   @CacheEvict 缓存清理
+   @CachePut 无论是否有缓存，都去做缓存的设置
+   @Caching 对上面的操作（例如缓存清理，缓存设置）做打包，放入多个操作。
+   @CacheConfig 对缓存做设置，例如设置缓存的名字
+ 
+ @EnableCaching开启缓存
+ 整个Spring的缓存抽象实际是基于AOP的，使用了动态代理。 比如在获取一个数据时会判断该数据是直接从缓存中获取，还是从数据库获取。
