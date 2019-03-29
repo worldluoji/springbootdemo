@@ -12,11 +12,17 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.util.Optional;
 
 @Slf4j
+@EnableTransactionManagement
+@EnableJpaRepositories
 @SpringBootApplication
+@EnableCaching(proxyTargetClass = true)
 public class SpringOnlineCoffeeApplication implements ApplicationRunner {
 
     @Autowired
@@ -34,12 +40,13 @@ public class SpringOnlineCoffeeApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        log.info("All Coffee {}", coffeeRepository.findAll());
-        Optional<Coffee> latte = coffeeService.findOneCoffee("LATTE");
-        if (latte.isPresent()) {
-            Order order = orderService.createOrder("luoji", latte.get());
-            log.info("Update INIT to PAID: {}", orderService.updateOrder(order, OrderState.PAID));
-            log.info("Update PAID to INIT: {}", orderService.updateOrder(order, OrderState.INIT));
+        log.info("Coffee Count {}", coffeeService.findAllCoffee().size());
+        for (int i = 0;i < 5;i++) {
+            log.info("loading from cache...");
+            coffeeService.findAllCoffee();
         }
+
+        coffeeService.reloadCoffee();
+        coffeeService.findAllCoffee().forEach(c -> log.info("coffee {}", c));
     }
 }
