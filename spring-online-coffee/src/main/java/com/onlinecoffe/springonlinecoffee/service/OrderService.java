@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -18,6 +19,14 @@ public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    public Order get(Long id) {
+        Optional<Order> order = orderRepository.findById(id);
+        if (order.isPresent()) {
+            return order.get();
+        }
+        return null;
+    }
 
     public Order createOrder(String customer, Coffee...coffee) {
         Order order = Order.builder().customer(customer)

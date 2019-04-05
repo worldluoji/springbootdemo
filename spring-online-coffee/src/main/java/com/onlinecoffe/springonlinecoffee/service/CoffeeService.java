@@ -3,6 +3,7 @@ package com.onlinecoffe.springonlinecoffee.service;
 import com.onlinecoffe.springonlinecoffee.model.Coffee;
 import com.onlinecoffe.springonlinecoffee.repository.CoffeeRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.money.Money;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
@@ -23,6 +24,22 @@ public class CoffeeService {
 
     @Autowired
     private CoffeeRepository coffeeRepository;
+
+    public Coffee saveCoffee(String coffeeName, Money price) {
+        return coffeeRepository.save(Coffee.builder().name(coffeeName).price(price).build());
+    }
+
+    public Coffee getCoffee(Long coffeeId) {
+        return coffeeRepository.findById(coffeeId).get();
+    }
+
+    public Coffee getCoffee(String coffeeName) {
+        return coffeeRepository.findByName(coffeeName);
+    }
+
+    public List<Coffee> getCoffeesByName(List<String> coffeeNames) {
+        return coffeeRepository.findByNameInOrderById(coffeeNames);
+    }
 
     public Optional<Coffee> findOneCoffee(String name) {
         ExampleMatcher matcher = ExampleMatcher.matching().withMatcher("name", exact().ignoreCase());

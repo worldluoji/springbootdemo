@@ -66,3 +66,52 @@ public void reloadCoffee() {
 }
 
 4）. 在实际调用用缓存方法的类上加上@EnableCaching(proxyTargetClass = true)注解
+
+6. RequsetMapping中的params参数：
+可以限制请求参数
+param1: 表示请求必须包含名为 param1 的请求参数
+!param1: 表示请求不能包含名为 param1 的请求参数
+param1 != value1: 表示请求包含名为 param1 的请求参数，但其值不能为 value1
+{“param1=value1”, “param2”}: 请求必须包含名为 param1 和param2 的两个请求参数，且 param1 参数的值必须为 value1
+
+7.  @GetMapping("/{id}")
+    public Coffee getById(@PathVariable Long id) {
+    }
+@PathVariable中的id，就是/{id}中的id
+
+8. RequsetMapping中的consumes参数：例如consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE限制请求类型是http url，
+consumes = MediaType.APPLICATION_JSON_UTF8_VALUE 限制请求类型是json; MediaType.MULTIPART_FORM_DATA_VALUE表示是文件上传。
+读取文件示例：
+@PostMapping(path = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+@ResponseStatus(HttpStatus.CREATED)
+public List<Coffee> batchAddCoffee(@RequestParam("file") MultipartFile file) {
+    List<Coffee> coffees = new ArrayList<>();
+    if (!file.isEmpty()) {
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
+            String str;
+            while((str=reader.readLine()) != null) {
+                String[] info = StringUtils.split(str, " ");
+                if (info != null && info.length == 2) {
+                    String coffeeName = info[0];
+                    Money price = Money.of(CurrencyUnit.of("CNY"), NumberUtils.createBigDecimal(info[1]));
+                    coffees.add(coffeeService.saveCoffee(coffeeName, price));
+                }
+            }
+        } catch (IOException e) {
+            log.error("Read file failed : {}", e);
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
+    }
+    return coffees;
+}
+
+9. List<->Arrays转换
+Coffee[] coffeeArrays = coffeeList.toArray(new Coffee[]{});
+List<Coffee> coffeeList = Arrrays.asList(coffeeArrays);
+
+10. consumes和produces区别
+consumes： 指定处理请求的提交内容类型（Content-Type），例如application/json, text/html;
+produces:  指定返回的内容类型，仅当request请求头中的(Accept)类型中包含该指定类型才返回
