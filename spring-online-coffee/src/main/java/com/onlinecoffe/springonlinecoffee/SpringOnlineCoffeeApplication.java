@@ -1,9 +1,7 @@
 package com.onlinecoffe.springonlinecoffee;
 
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
-import com.onlinecoffe.springonlinecoffee.model.Coffee;
-import com.onlinecoffe.springonlinecoffee.model.Order;
-import com.onlinecoffe.springonlinecoffee.model.OrderState;
+import com.onlinecoffe.springonlinecoffee.controller.Interceptor.PerformanceInterceptor;
 import com.onlinecoffe.springonlinecoffee.repository.CoffeeRepository;
 import com.onlinecoffe.springonlinecoffee.service.CoffeeService;
 import com.onlinecoffe.springonlinecoffee.service.OrderService;
@@ -17,15 +15,15 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-
-import java.util.Optional;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Slf4j
 @EnableTransactionManagement
 @EnableJpaRepositories
 @SpringBootApplication
 @EnableCaching(proxyTargetClass = true)
-public class SpringOnlineCoffeeApplication implements ApplicationRunner {
+public class SpringOnlineCoffeeApplication implements WebMvcConfigurer, ApplicationRunner {
 
     @Autowired
     private CoffeeRepository coffeeRepository;
@@ -48,12 +46,12 @@ public class SpringOnlineCoffeeApplication implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         log.info("Coffee Count {}", coffeeService.findAllCoffee().size());
-        for (int i = 0;i < 5;i++) {
-            log.info("loading from cache...");
-            coffeeService.findAllCoffee();
-        }
-
-        coffeeService.reloadCoffee();
         coffeeService.findAllCoffee().forEach(c -> log.info("coffee {}", c));
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new PerformanceInterceptor())
+                .addPathPatterns("/coffee/**").addPathPatterns("/order/**");
     }
 }

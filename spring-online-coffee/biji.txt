@@ -199,3 +199,51 @@ public class GlobalControllerAdvice {
 public class FormValidationException extends RuntimeException {
     private BindingResult result;
 }
+
+16. 使用拦截器
+首先要实现WebMvcConfigurer接口，覆写addInterceptors方法，addPathPatterns指示拦截哪些url.
+@Override
+public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(new PerformanceInterceptor())
+            .addPathPatterns("/coffee/**").addPathPatterns("/order/**");
+}
+
+自己要写一个拦截器PerformanceInterceptor继承HandlerInterceptor：
+@Slf4j
+public class PerformanceInterceptor implements HandlerInterceptor {
+    private ThreadLocal<StopWatch> stopWatch = new ThreadLocal<>();
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        StopWatch sw = new StopWatch();
+        stopWatch.set(sw);
+        sw.start();
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        stopWatch.get().stop();
+        stopWatch.get().start();
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        StopWatch sw = stopWatch.get();
+        sw.stop();
+        String method = handler.getClass().getSimpleName();
+        if (handler instanceof HandlerMethod) {
+            String beanType = ((HandlerMethod)handler).getBeanType().getName();
+            String methodName = ((HandlerMethod)handler).getMethod().getName();
+            method = beanType + "." + methodName;
+        }
+
+        log.info("{};{};{};{};{}ms;{}ms;{}ms", request.getRequestURI(), method,
+                response.getStatus(), ex == null ? "-" : ex.getClass().getSimpleName(),
+                sw.getTotalTimeMillis(), sw.getTotalTimeMillis() - sw.getLastTaskTimeMillis(),
+                sw.getLastTaskTimeMillis());
+        stopWatch.remove();
+    }
+}
+
+preHandle请求处理之前调用；postHandle，Controller处理完，视图渲染完成之前调用；afterCompletion，视图渲染完成后调用。
