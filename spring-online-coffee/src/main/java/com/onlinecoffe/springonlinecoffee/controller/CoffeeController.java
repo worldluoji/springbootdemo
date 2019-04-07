@@ -1,5 +1,6 @@
 package com.onlinecoffe.springonlinecoffee.controller;
 
+import com.onlinecoffe.springonlinecoffee.controller.exception.FormValidationException;
 import com.onlinecoffe.springonlinecoffee.controller.request.NewCoffeeRequest;
 import com.onlinecoffe.springonlinecoffee.model.Coffee;
 import com.onlinecoffe.springonlinecoffee.service.CoffeeService;
@@ -12,10 +13,12 @@ import org.joda.money.Money;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import javax.validation.ValidationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,6 +33,7 @@ public class CoffeeController {
     @Autowired
     private CoffeeService coffeeService;
 
+    /*
     @PostMapping(path = "/", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public Coffee addCoffeeWithoutBindingResult(@Valid NewCoffeeRequest newCoffee) {
@@ -39,6 +43,26 @@ public class CoffeeController {
     @RequestMapping(path = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.POST)
     @ResponseStatus(HttpStatus.CREATED)
     public Coffee addJsonCoffeeWithoutBindingResult(@Valid @RequestBody NewCoffeeRequest newCoffee) {
+        return coffeeService.saveCoffee(newCoffee.getName(), newCoffee.getPrice());
+    }*/
+
+    @PostMapping(path = "/", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public Coffee addCoffee(@Valid NewCoffeeRequest newCoffee, BindingResult result) {
+        if (result.hasErrors()) {
+            log.error("[addCoffee] Binding result  error : {}", result);
+            throw new FormValidationException(result);
+        }
+        return coffeeService.saveCoffee(newCoffee.getName(), newCoffee.getPrice());
+    }
+
+    @RequestMapping(path = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.POST)
+    @ResponseStatus(HttpStatus.CREATED)
+    public Coffee addJsonCoffee(@Valid @RequestBody NewCoffeeRequest newCoffee, BindingResult result) {
+        if (result.hasErrors()) {
+            log.error("[addJsonCoffee] Binding result  error : {}", result);
+            throw new ValidationException(result.toString());
+        }
         return coffeeService.saveCoffee(newCoffee.getName(), newCoffee.getPrice());
     }
 

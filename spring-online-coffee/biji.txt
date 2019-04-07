@@ -167,3 +167,35 @@ public Hibernate5Module hibernate5Module() {
 }
 例如，增加了jackson-datatype-hibernate5就不需要这个Ignore了
 @JsonIgnoreProperties(value = {"hibernateLazyInitializer"})
+
+
+14. 配置静态文件所在目录和缓存时间
+spring.mvc.static-path-pattern=/static/**     
+spring.resources.cache.cachecontrol.max-age=20s
+一般静态文件缓存会通过ngnix去做
+
+
+15. 异常处理
+@RestControllerAdvice实际上就是@RestconContorller + @ResponseBody
+把错误信息通过map以json的形式返回错误信息到浏览器显示。@ExceptionHandler标记异常处理类。
+@RestControllerAdvice
+public class GlobalControllerAdvice {
+    @ExceptionHandler(ValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    private Map<String, String> validationExceptionHandler(ValidationException exp) {
+        Map<String, String> map =  new HashMap<>();
+        map.put("message", exp.getMessage());
+        return map;
+    }
+}
+这样，在发生ValidationException时就会触发validationExceptionHandler.
+异常类的定义：
+/*
+* 定义一个异常类，带一个BindingResult参数， 发生错误时返回码为BAD_REQUEST=400参数错误
+* */
+@Getter
+@AllArgsConstructor
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public class FormValidationException extends RuntimeException {
+    private BindingResult result;
+}
