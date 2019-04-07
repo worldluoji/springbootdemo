@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+
 @RestController
 @RequestMapping("/order")
 @Slf4j
@@ -22,7 +24,7 @@ public class OrderController {
 
     @PostMapping(path = "/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public Order createOrder(@RequestBody NewOrderRequest newOrder) {
+    public Order createOrder(@RequestBody @Valid NewOrderRequest newOrder) {
         Coffee[] coffees = coffeeService.getCoffeesByName(newOrder.getItems()).toArray(new Coffee[]{});
         return orderService.createOrder(newOrder.getCustomer(), coffees);
     }

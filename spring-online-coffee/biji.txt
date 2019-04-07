@@ -113,5 +113,57 @@ Coffee[] coffeeArrays = coffeeList.toArray(new Coffee[]{});
 List<Coffee> coffeeList = Arrrays.asList(coffeeArrays);
 
 10. consumes和produces区别
-consumes： 指定处理请求的提交内容类型（Content-Type），例如application/json, text/html;
-produces:  指定返回的内容类型，仅当request请求头中的(Accept)类型中包含该指定类型才返回
+consumes： 指定处理请求的提交内容类型（Content-Type），例如application/json, text/html;如果不是该类型则人非请求非法，报400错误。
+produces:  指定返回的内容类型，仅当request请求头中的(Accept)类型中包含该指定类型才返回。
+
+
+11. Spring Boot中默认使用了Jackson进行Json序列化（将对象转化为json）和反序列化(将json转化为对象)，有时候需要对对象中某个属性进行定制，
+比如joda中的Money类型，如果不进行定制，那么在序列化时返回浏览器的Money字段就是一堆二进制流，定制后则只返回Money的金额大小。
+@JsonComponent注解就是用来告诉Spring中的JackSon, 在Json序列化和反序列时，某个特性类型的属性需要定制。
+
+@JsonComponent
+public class MoneySerializer extends StdSerializer<Money> {
+    public MoneySerializer() {
+        super(Money.class);
+    }
+
+    @Override
+    public void serialize(Money value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+        gen.writeNumber(value.getAmount());
+    }
+}
+
+@JsonComponent
+public class MoneyDeserializer extends StdDeserializer<Money> {
+    public MoneyDeserializer() {
+        super(Money.class);
+    }
+
+    @Override
+    public Money deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        return Money.of(CurrencyUnit.of("CNY"), p.getDecimalValue());
+    }
+}
+
+12. 如果需要Spring中Jackson支持xml的请求（application/xml），则要在pom.xml加入如下依赖：
+<!-- 增加Jackson XML支持 -->
+<dependency>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-xml</artifactId>
+    <version>2.9.0</version>
+</dependency>s
+
+
+13.<!-- 增加Jackson的Hibernate类型支持 -->
+<dependency>
+    <groupId>com.fasterxml.jackson.datatype</groupId>
+    <artifactId>jackson-datatype-hibernate5</artifactId>
+    <version>2.9.8</version>
+</dependency>
+还要在spring容器中注入Bean
+@Bean
+public Hibernate5Module hibernate5Module() {
+	return new Hibernate5Module();
+}
+例如，增加了jackson-datatype-hibernate5就不需要这个Ignore了
+@JsonIgnoreProperties(value = {"hibernateLazyInitializer"})
