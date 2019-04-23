@@ -1,0 +1,33 @@
+1. 注意依赖包版本要配套，可以去spring官网 选择spring cloud查看。
+
+2. 新版本（Spring boot 2.1.4 + Spring cloud Greenwich SR1）客户端注册到Eureka要使用
+@EnableDiscoveryClient,不要使用@EnableEurekaClient.
+
+3. Spring Boot 2.1.4 客户端依赖包要添加
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    <version>2.1.1.RELEASE</version>
+</dependency>
+服务器端依赖包
+ <dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+
+4. 关键配置
+eureka.client.service-url.defaultZone=http://eureka1:8761/eureka/
+这个配置指明了注册中心的地址
+eureka.instance.perferIpAddress=false  如果上面注册中心是使用域名就要配置为false，否则true
+spring.application.name=e-book-consumer  注册中心Eureka显示的名字就是我们给服务取的这个名字
+
+5. 有的版本说eureka server地址不能配置为localhost，但实验下来这个版本是可以的。
+
+6. Feign的消费端，要加上注解@EnableFeignClients，否则找不到。还要在依赖中把provider加入
+ <dependency>
+    <groupId>com.feign</groupId>
+    <artifactId>feign-provider</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <scope>compile</scope>
+</dependency>
+因为consumer会使用到provider暴露出来的接口。
