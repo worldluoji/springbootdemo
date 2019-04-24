@@ -31,3 +31,5 @@ spring.application.name=e-book-consumer  注册中心Eureka显示的名字就是
     <scope>compile</scope>
 </dependency>
 因为consumer会使用到provider暴露出来的接口。
+
+7. 请求中，如果是单个单个参数，要加@RequestParam, 如果是一个对象，则要加@RequestBody

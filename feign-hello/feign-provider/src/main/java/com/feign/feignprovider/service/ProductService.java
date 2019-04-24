@@ -20,5 +20,19 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    public Product getById(Long id) {
+        return productRepository.getOne(id);
+    }
+
+    public Product getByIdAndName(Long id, String name) {
+        return productRepository.findByIdAndName(id, name);
+    }
+
+    public Product addProduct(Product product) {
+        if (product == null) {
+            return new Product();
+        }
+        return productRepository.save(product);
+    }
 
 }
