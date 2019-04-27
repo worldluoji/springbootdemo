@@ -1,6 +1,7 @@
 package com.feign.feignprovider.facade;
 
 import com.feign.feignprovider.model.Product;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -18,6 +19,9 @@ public interface ProductFacade {
 
     @RequestMapping(value = "get2", method = RequestMethod.GET)
     public Product getProductByIdAndName(@RequestParam("id")  Long id, @RequestParam("name") String name);
+
+    @RequestMapping(value = "get3", method = RequestMethod.GET, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public Product getProjectByPoJo(Product product);
 
     @RequestMapping(value = "add", method = RequestMethod.POST)
     public Product addProduct(@RequestBody Product product);

@@ -32,6 +32,12 @@ public class ConsumerController {
 		return productService.getProductByIdAndName(id, name);
 	}
 
+	//采用httpclient解决了feign自动转post的问题
+	@RequestMapping(value = "get3", method = RequestMethod.GET)
+	public Product getProjectByPoJo(Product product) {
+		return productService.getProjectByPoJo(product);
+	}
+
 	@RequestMapping(value = "add", method = RequestMethod.POST)
 	public Product addProduct(@RequestBody Product product) {
 		if (product == null) {

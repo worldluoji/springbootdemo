@@ -33,3 +33,26 @@ spring.application.name=e-book-consumer  注册中心Eureka显示的名字就是
 因为consumer会使用到provider暴露出来的接口。
 
 7. 请求中，如果是单个单个参数，要加@RequestParam, 如果是一个对象，则要加@RequestBody
+
+8. 在客户端配置是否启用压缩：
+server.compression.enabled=true
+server.compression.mime-types=application/json,application/xml,text/html,text/xml,text/plain
+#server.compression.min-response-size=512
+原理是在http请求和响应中加入gzip编码的请求， 由于压缩了，大大减少了网络传输的时间。
+
+9. 关于httpclient：
+feign.httpclient.enabled=true   这样feign会使用http连接池，从而提高系统性能。
+
+10. 如何记录feign调用接口的信息和耗时？
+@Bean
+public Logger.Level feignLoggerLevel(){
+//		NONE, 不记录任何信息，默认值。
+//		BASIC, 记录请求方法、请求URL、状态码和用时。
+//		HEADERS, 在BASIC的基础上再记录一些常用信息。
+//		FULL: 记录请求和响应报文的全部内容。
+	return Logger.Level.FULL;
+}
+
+11. com.fasterxml.jackson.databind.exc.InvalidDefinitionException
+可能是使用了Lombok插件导致序列化异常，在实体类加入如下注解即可：
+@JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"})
