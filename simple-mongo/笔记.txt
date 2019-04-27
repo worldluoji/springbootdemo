@@ -1,0 +1,32 @@
+1. 数据库操作 
+创建数据库：
+use springbucks;
+查看有数据库:
+show dbs;
+删除数据库
+db.dropDatabase();
+
+2. 集合操作
+db.createCollection("springbucks")
+db.collection.drop();
+show collections;
+
+3. 数据（Document）CURD
+db.springbucks.insert({"name":"natty"});
+db.springbucks.remove({'name':'blackcoffee'});
+db.springbucks.find();
+db.springbucks.update({'name':'natty'},{$set:{'name;:'blackcoffee'}})
+
+
+4. springboot使用Mongodb:
+配置spring.data.mongodb.uri=mongodb://springbucks:springbucks@localhost:27017/springbucks
+
+
+5. mongdb id无法映射为Java的Long类型
+Mongo ObjectIds don't map to a java Long type.
+I see this in the documentation, under 7.6.1:
+http://docs.spring.io/spring-data/mongodb/docs/current/reference/html/#mongo-template.id-handling
+An id property or field declared as a String in the Java class will be converted to and stored as an ObjectId if possible using a Spring Converter. Valid conversion rules are delegated to the MongoDB Java driver. If it cannot be converted to an ObjectId, then the value will be stored as a string in the database.
+An id property or field declared as BigInteger in the Java class will be converted to and stored as an ObjectId using a Spring Converter.
+So change id to a String or a BigInteger and remove the strategy argument.
+或者创建converter

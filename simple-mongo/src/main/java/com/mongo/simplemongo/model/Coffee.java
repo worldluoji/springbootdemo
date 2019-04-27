@@ -17,7 +17,7 @@ import java.util.Date;
 @Builder
 public class Coffee {
     @Id
-    private Long id;
+    private String id;
     private String name;
     private Money price;
     private Date createTime;
