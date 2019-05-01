@@ -81,3 +81,20 @@ e-book-product.ribbon.ConnectTimeout=3000
 e-book-product.ribbon.ReadTimeout=3000
 # 指定具体的服务实例清单
 #e-book-product.ribbon.listOfServers=
+
+13. feign使用hytrix熔断机制
+1）配置文件增加feign.hystrix.enabled=true
+2）启动类增加注解@EnableCircuitBreaker
+@EnableFeignClients
+@EnableDiscoveryClient
+@EnableCircuitBreaker //开启服务降级 断路器
+@SpringBootApplication
+public class FeignConsumerHytrixApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(FeignConsumerHytrixApplication.class, args);
+    }
+}
+3）客户端上指定fallback的类：
+@FeignClient(name="e-book-product", fallback = ProductServiceFallBack.class, configuration = FeignClientConfig.class)
+public interface ProductService
+然后ProductServiceFallBack回退类实现ProductService，里面返回托底数据。
