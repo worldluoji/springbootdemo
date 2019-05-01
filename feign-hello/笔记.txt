@@ -52,7 +52,32 @@ public Logger.Level feignLoggerLevel(){
 //		FULL: 记录请求和响应报文的全部内容。
 	return Logger.Level.FULL;
 }
+配置文件中配置
+logging.level.com.feign.feignconsumer.service.ProductService=debug
+即logging.level.<FeignClient>=debug开启指定Feign客户端的DEBUG模式日志；
+<FeignClient>为Feign客户端定义接口的完整路径
 
 11. com.fasterxml.jackson.databind.exc.InvalidDefinitionException
 可能是使用了Lombok插件导致序列化异常，在实体类加入如下注解即可：
 @JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"})
+
+12. feign中ribbon的配置
+#全局配置
+## 请求连接的超时时间
+#ribbon.ConnectTimeout=5000
+## 请求处理的超时时间
+#ribbon.ReadTimeout=5000
+
+#局部配置
+# 对所有操作请求都进行重试
+e-book-product.ribbon.OkToRetryOnAllOperations=true
+# 对当前实例的重试次数
+e-book-product.ribbon.MaxAutoRetries=2
+# 切换实例的重试次数
+e-book-product.ribbon.MaxAutoRetriesNextServer=0
+# 请求连接的超时时间
+e-book-product.ribbon.ConnectTimeout=3000
+# 请求处理的超时时间
+e-book-product.ribbon.ReadTimeout=3000
+# 指定具体的服务实例清单
+#e-book-product.ribbon.listOfServers=
