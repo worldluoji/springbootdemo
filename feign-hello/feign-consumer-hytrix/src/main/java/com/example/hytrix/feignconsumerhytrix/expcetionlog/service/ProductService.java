@@ -1,7 +1,7 @@
-package com.example.hytrix.feignconsumerhytrix.service;
+package com.example.hytrix.feignconsumerhytrix.expcetionlog.service;
 
-import com.example.hytrix.feignconsumerhytrix.feignconfig.FeignClientConfig;
-import com.example.hytrix.feignconsumerhytrix.hytrix.ProductServiceFallBack;
+import com.example.hytrix.feignconsumerhytrix.expcetionlog.feignconfig.FeignClientConfig;
+import com.example.hytrix.feignconsumerhytrix.expcetionlog.hytrix.ProductServiceFallBack;
 import com.feign.feignprovider.model.Product;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;

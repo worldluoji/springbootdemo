@@ -1,6 +1,6 @@
-package com.example.hytrix.feignconsumerhytrix.controller;
+package com.example.hytrix.feignconsumerhytrix.expcetionlog.controller;
 
-import com.example.hytrix.feignconsumerhytrix.service.ProductService;
+import com.example.hytrix.feignconsumerhytrix.expcetionlog.service.ProductService;
 import com.feign.feignprovider.model.Product;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

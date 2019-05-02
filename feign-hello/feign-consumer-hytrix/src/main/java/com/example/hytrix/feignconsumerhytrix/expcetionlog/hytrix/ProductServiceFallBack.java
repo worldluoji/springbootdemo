@@ -1,6 +1,6 @@
-package com.example.hytrix.feignconsumerhytrix.hytrix;
+package com.example.hytrix.feignconsumerhytrix.expcetionlog.hytrix;
 
-import com.example.hytrix.feignconsumerhytrix.service.ProductService;
+import com.example.hytrix.feignconsumerhytrix.expcetionlog.service.ProductService;
 import com.feign.feignprovider.model.Product;
 import org.springframework.stereotype.Component;
 

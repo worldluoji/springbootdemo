@@ -1,4 +1,4 @@
-package com.example.hytrix.feignconsumerhytrix;
+package com.example.hytrix.feignconsumerhytrix.expcetionlog;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package com.example.hytrix.feignconsumerhytrix.feignconfig;
+package com.example.hytrix.feignconsumerhytrix.expcetionlog.feignconfig;
 
 import feign.Logger;
 import org.springframework.context.annotation.Bean;

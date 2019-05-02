@@ -1,4 +1,4 @@
-package com.example.hytrix.feignconsumerhytrix;
+package com.example.hytrix.feignconsumerhytrix.expcetionlog;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

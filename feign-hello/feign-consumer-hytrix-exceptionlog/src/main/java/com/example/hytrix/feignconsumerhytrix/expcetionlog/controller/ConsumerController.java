@@ -2,6 +2,7 @@ package com.example.hytrix.feignconsumerhytrix.expcetionlog.controller;
 
 import com.example.hytrix.feignconsumerhytrix.expcetionlog.service.ProductService;
 import com.feign.feignprovider.model.Product;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ import java.util.List;
 public class ConsumerController {
 	@Autowired
 	private ProductService productService;
-	
+
 	@RequestMapping(value = "list", method = RequestMethod.GET)
 	public List<Product> listProduct(){
 		List<Product> list = this.productService.listProduct();
