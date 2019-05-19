@@ -176,7 +176,7 @@ spring.resources.cache.cachecontrol.max-age=20s
 
 
 15. 异常处理
-@RestControllerAdvice实际上就是@RestconContorller + @ResponseBody
+@RestControllerAdvice实际上就是@ControllerAdvice + @ResponseBody
 把错误信息通过map以json的形式返回错误信息到浏览器显示。@ExceptionHandler标记异常处理类。
 @RestControllerAdvice
 public class GlobalControllerAdvice {

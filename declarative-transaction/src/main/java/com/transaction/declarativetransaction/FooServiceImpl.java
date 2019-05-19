@@ -17,6 +17,10 @@ public class FooServiceImpl implements FooService {
         jdbcTemplate.update("INSERT INTO FOO(BAR) VALUES('AAa') ");
     }
 
+
+    /*
+    * 如果不指定rollbackFor参数，则默认发生RuntimeException时回滚
+    * */
     @Override
     @Transactional(rollbackFor = RollBackException.class)
     public void insertThenRollback() throws RollBackException {
@@ -24,6 +28,10 @@ public class FooServiceImpl implements FooService {
         throw new RollBackException();
     }
 
+    /*
+    * @Transactional注解的原理是使用动态代理，这样调用@Transactional注解无效
+    * 正确的方式应该是将对象注入进来后再调用
+    * */
     @Override
     public void invokeInsertThenRollback() throws RollBackException {
         insertThenRollback();
