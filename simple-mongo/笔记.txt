@@ -1,3 +1,4 @@
+MongoDB适合存储大量关联性不强的数据。它不需要预先定义好数据表结构，数据字段也可以任意变动，并发写入速度也远远强于关系型数据库。它可以并发的插入上万条文档。
 1. 数据库操作 
 创建数据库：
 use springbucks;
@@ -30,3 +31,39 @@ An id property or field declared as a String in the Java class will be converted
 An id property or field declared as BigInteger in the Java class will be converted to and stored as an ObjectId using a Spring Converter.
 So change id to a String or a BigInteger and remove the strategy argument.
 或者创建converter
+
+6. 条件查询，AND查询和OR查询
+例：
+db.user.find()
+{ "_id" : ObjectId("5cf67cdfba03b334a522fc83"), "id" : 1, "name" : "luoji", "age" : 28, "salary" : 17500 }
+{ "_id" : ObjectId("5cf67d1dba03b334a522fc84"), "id" : 2, "name" : "xiaoming", "age" : 25, "salary" : 10000 }
+{ "_id" : ObjectId("5cf67d2fba03b334a522fc85"), "id" : 3, "name" : "xiaohong", "age" : 23, "salary" : 6000 }
+
+1）条件查询，查询大于25的：
+db.user.find({'age':{$gt:25}})
+{ "_id" : ObjectId("5cf67cdfba03b334a522fc83"), "id" : 1, "name" : "luoji", "age" : 28, "salary" : 17500 }
+
+2) AND查询
+a.隐示AND查询，就是多个条件查询的组合
+db.user.find({age:{$gt:20},salary:{$lt:11000}})
+{ "_id" : ObjectId("5cf67d1dba03b334a522fc84"), "id" : 2, "name" : "xiaoming", "age" : 25, "salary" : 10000 }
+{ "_id" : ObjectId("5cf67d2fba03b334a522fc85"), "id" : 3, "name" : "xiaohong", "age" : 23, "salary" : 6000 }
+b.显示AND查询
+db.user.find({$and:[{age:{$gt:20}},{salary:{$gt:10000}}]});
+{ "_id" : ObjectId("5cf67cdfba03b334a522fc83"), "id" : 1, "name" : "luoji", "age" : 28, "salary" : 17500 }
+明显隐式AND更容易理解和更简洁，实际中也推荐尽量使用隐式AND.但是隐式AND一定可以转化为显式AND，反之则不然，有的场景只能使用显式AND,比如有AND和OR嵌套的场景。
+
+３）OR查询
+只有显式OR查询
+db.user.find({$or:[{age:{$lt:25}},{salary:{$gt:10000}}]});
+{ "_id" : ObjectId("5cf67cdfba03b334a522fc83"), "id" : 1, "name" : "luoji", "age" : 28, "salary" : 17500 }
+{ "_id" : ObjectId("5cf67d2fba03b334a522fc85"), "id" : 3, "name" : "xiaohong", "age" : 23, "salary" : 6000 }
+
+AND和OR嵌套查询的例子
+ db.user.find({$and:[{$or:[{age:{$gt:25}},{salary:{$gt:10000}}]},{$or:[{salary:{$lt:8000}},{name:'luoji'}]}]})
+{ "_id" : ObjectId("5cf67cdfba03b334a522fc83"), "id" : 1, "name" : "luoji", "age" : 28, "salary" : 17500 }
+
+7.聚合
+MongoDB自带了聚合(Aggregation)功能，它可以让MongoDB处理数据。聚合功能就像把数据放入传送带一样，先把原始数据按照一定的规则进行筛选，然后通过多个不同的数据处理阶段（前一个阶段的输出时后一个阶段的输入）来处理数据，最终输出一个汇总结果。
+语法：collection.aggregate([阶段1，阶段2，阶段3......])
+如果0个阶段，则作用和find一样。即db.user.aggregate() 等价于 db.user.find()
