@@ -5,6 +5,11 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.springframework.core.convert.converter.Converter;
 
+
+/**
+* 只要遇到Money的变量就转化为：
+ * "price" : { "money" : { "currency" : { "code" : "CNY", "numericCode" : 156, "decimalPlaces" : 2 }, "amount" : "30.00" } }
+* */
 public class MoneyReadConvert implements Converter<Document, Money> {
     @Override
     public Money convert(Document source) {

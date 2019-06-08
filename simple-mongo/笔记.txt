@@ -1,4 +1,7 @@
 MongoDB适合存储大量关联性不强的数据。它不需要预先定义好数据表结构，数据字段也可以任意变动，并发写入速度也远远强于关系型数据库。它可以并发的插入上万条文档。
+db<->db
+collection<->table
+doucument<->一条记录
 1. 数据库操作 
 创建数据库：
 use springbucks;
@@ -16,6 +19,11 @@ show collections;
 db.springbucks.insert({"name":"natty"});
 db.springbucks.remove({'name':'blackcoffee'});
 db.springbucks.find();
+> db.user.find()
+{ "_id" : ObjectId("5cf67cdfba03b334a522fc83"), "id" : 1, "name" : "luoji", "age" : 28, "salary" : 17500 }
+{ "_id" : ObjectId("5cf67d1dba03b334a522fc84"), "id" : 2, "name" : "xiaoming", "age" : 25, "salary" : 10000 }
+{ "_id" : ObjectId("5cf67d2fba03b334a522fc85"), "id" : 3, "name" : "xiaohong", "age" : 23, "salary" : 6000 }
+
 db.springbucks.update({'name':'natty'},{$set:{'name;:'blackcoffee'}})
 
 
@@ -64,6 +72,35 @@ AND和OR嵌套查询的例子
 { "_id" : ObjectId("5cf67cdfba03b334a522fc83"), "id" : 1, "name" : "luoji", "age" : 28, "salary" : 17500 }
 
 7.聚合
-MongoDB自带了聚合(Aggregation)功能，它可以让MongoDB处理数据。聚合功能就像把数据放入传送带一样，先把原始数据按照一定的规则进行筛选，然后通过多个不同的数据处理阶段（前一个阶段的输出时后一个阶段的输入）来处理数据，最终输出一个汇总结果。
+MongoDB自带了聚合(Aggregation)功能，它可以让MongoDB处理数据。聚合功能就像把数据放入传送带一样，先把原始数据按照一定的规则进行筛选，然后通过多个不同的数据处理阶段（前一个阶段的输出时后一个阶段的输入）来处理数据，最终输出一个汇总结果。聚合的强大就在于组合。
 语法：collection.aggregate([阶段1，阶段2，阶段3......])
 如果0个阶段，则作用和find一样。即db.user.aggregate() 等价于 db.user.find()
+阶段中有哪些常用的方法呢？
+1) $match ： 查找匹配的，用于过滤，与find类似
+2）$project: 只想返回部分字段、或者想新增字段时就用它，很多材料也翻译它为投影，可以增加和删除的意思（投影可长可短）
+3）$group：分组操作，按照某个字段分组，然后可以进行后续对每个组求和求平均的操作等。
+4）$last, $first: 分别代表最新插入和和最老插入的，一般会和$group配合使用
+5）$unwind: 将有包含数组的字段展开，将一条记录扩展为多条记录
+6）$lookup:用于联合两个documnet查询
+7）$sort # 排序1升-1降
+sort一般放在group后,也就是说得到结果后再排序,如果先排序再分组没什么意义;
+8）$limit # 相当于limit m,不能设置偏移量
+9）$skip # 跳过第几个文档
+
+例1：使用match帅选出年龄大于24的，只返回id,name和salary,并新增了一列hello值都为$world.
+ db.user.aggregate([{$match:{'age':{$gt:24}}},{$project:{'_id':0,'id':1,'name':1,'salary':1,'hello':{$literal:'$world'}}}])
+{ "id" : 1, "name" : "luoji", "salary" : 17500, "hello" : "world" }
+{ "id" : 2, "name" : "xiaoming", "salary" : 10000, "hello" : "world" }
+可见$literal作用时当字符串$world中有特殊符号“$”时使用。
+
+例2：有一咖啡集合结构如下：
+{ "_id" : ObjectId("5cf9ce27f1dbd0412c9c55d0"), "name" : "espresso", "price" : { "money" : { "currency" : { "code" : "CNY", "numericCode" : 156, "decimalPlaces" : 2 }, "amount" : "30.00" } }, "createTime" : ISODate("2019-06-07T02:38:31.646Z"), "updateTime" : ISODate("2019-06-07T02:38:32.827Z"), "_class" : "com.mongo.simplemongo.model.Coffee" }
+查找价格大于30咖啡的名字，按照降序排列速出结果
+ db.coffee.aggregate([{$match:{'price.money.amount':{$gt:"30.00"}}},{$group:{'_id':'$name',}},{$sort:{'_id':-1}}])
+{ "_id" : "flatWhite" }
+{ "_id" : "breve" }
+可见，mongodb中存储double用的是字符串保存；按照姓名分组后返回的key是_id, value就是name
+
+例3：查找价格小于30的咖啡，返回姓名和价格
+db.coffee.aggregate([{$match:{'price.money.amount':{$lt:"30.00"}}},{$project:{'_id':0,'name':'$name','price':'$price.money.amount'}}])
+{ "name" : "mocha", "price" : "25.50" }
