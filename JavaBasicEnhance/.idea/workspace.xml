@@ -2,6 +2,26 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="70b3106e-92f0-475a-a8f9-28bfc99d56e6" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/fruit.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/biji.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/model/User.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/refField/demo/FieldDemo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/refMethod/demo/MethodDemo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/refconstrutor/demo/ConstrutorDemo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springaop/DynaProxyHello.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springaop/Logger.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springaop/SpringAopDemo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springaop/constants/LogLevel.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springaop/impl/Hello.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springaop/impl/Operation.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springaop/interfaces/IHello.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springaop/interfaces/IOperation.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springioc/InitProperties.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springioc/MySpingFactory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springioc/SpringIocDemo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springioc/impl/Apple.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springioc/impl/Orange.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ReflectDemo/springioc/interfaces/fruit.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -14,80 +34,92 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/LambdaDemo/TestLambda.java">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/SpringIocDemo.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="323">
-              <caret line="17" column="33" selection-start-line="17" selection-start-column="33" selection-end-line="17" selection-end-column="33" />
+            <state relative-caret-position="114">
+              <caret line="10" column="50" lean-forward="true" selection-start-line="10" selection-start-column="50" selection-end-line="10" selection-end-column="50" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/OptionalDemo/TestOptionalDemo.java">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/SpringAopDemo.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="171">
-              <caret line="13" column="31" selection-start-line="13" selection-start-column="31" selection-end-line="13" selection-end-column="31" />
+            <state relative-caret-position="190">
+              <caret line="10" column="34" lean-forward="true" selection-start-line="10" selection-start-column="34" selection-end-line="10" selection-end-column="34" />
               <folding>
                 <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/interfaces/IHello.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="76">
+              <caret line="4" column="31" selection-start-line="4" selection-start-column="31" selection-end-line="4" selection-end-column="31" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/impl/Hello.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="171">
+              <caret line="11" column="38" lean-forward="true" selection-start-line="11" selection-start-column="38" selection-end-line="11" selection-end-column="38" />
+              <folding>
+                <element signature="e#177#178#0" expanded="true" />
+                <element signature="e#198#199#0" expanded="true" />
+                <element signature="e#286#287#0" expanded="true" />
+                <element signature="e#338#339#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/constants/LogLevel.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="57">
+              <caret line="3" column="12" lean-forward="true" selection-start-line="3" selection-start-column="12" selection-end-line="3" selection-end-column="12" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/interfaces/IOperation.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="95">
+              <caret line="5" column="35" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/impl/Operation.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="193">
+              <caret line="14" column="13" lean-forward="true" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#266#267#0" expanded="true" />
+                <element signature="e#298#299#0" expanded="true" />
+                <element signature="e#456#457#0" expanded="true" />
+                <element signature="e#488#489#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/OptionalDemo/models/TestOptionalDemo2.java">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/DynaProxyHello.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="19">
-              <caret line="8" column="32" selection-start-line="8" selection-start-column="32" selection-end-line="8" selection-end-column="32" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/OptionalDemo/models/Person.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="133">
-              <caret line="8" column="25" selection-start-line="8" selection-start-column="25" selection-end-line="8" selection-end-column="25" />
-              <folding>
-                <element signature="imports" expanded="true" />
-                <element signature="e#186#187#0" expanded="true" />
-                <element signature="e#212#213#0" expanded="true" />
-                <element signature="e#257#258#0" expanded="true" />
-                <element signature="e#287#288#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/OptionalDemo/models/Car.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="247">
-              <caret line="13" column="32" selection-start-line="13" selection-start-column="32" selection-end-line="13" selection-end-column="32" />
-              <folding>
-                <element signature="e#349#350#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/OptionalDemo/models/Insurance.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="95">
-              <caret line="5" column="35" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
-              <folding>
-                <element signature="e#147#148#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/LambdaDemo/apple/PredicateApple.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="285">
-              <caret line="17" column="44" selection-start-line="17" selection-start-column="44" selection-end-line="17" selection-end-column="44" />
+            <state relative-caret-position="81">
+              <caret line="28" column="8" lean-forward="true" selection-start-line="28" selection-start-column="8" selection-end-line="28" selection-end-column="8" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -96,31 +128,22 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/LambdaDemo/apple/TestSortApple.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="247">
-              <caret line="15" column="43" selection-start-line="15" selection-start-column="43" selection-end-line="15" selection-end-column="43" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/LambdaDemo/apple/Apple.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="209">
-              <caret line="11" column="5" selection-start-line="11" selection-start-column="5" selection-end-line="11" selection-end-column="5" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/LambdaDemo/apple/Predicate.java">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/Logger.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="76">
-              <caret line="4" column="1" selection-start-line="4" selection-start-column="1" selection-end-line="4" selection-end-column="1" />
+              <caret line="6" column="19" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="19" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/interfaces/fruit.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="57">
+              <caret line="3" column="15" selection-start-line="3" selection-start-column="15" selection-end-line="3" selection-end-column="15" />
             </state>
           </provider>
         </entry>
@@ -130,6 +153,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Enum" />
         <option value="Interface" />
         <option value="Class" />
       </list>
@@ -149,6 +173,27 @@
         <option value="$PROJECT_DIR$/src/LambdaDemo/apple/PredictApple.java" />
         <option value="$PROJECT_DIR$/src/LambdaDemo/apple/PredicateApple.java" />
         <option value="$PROJECT_DIR$/src/LambdaDemo/apple/TestSortApple.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/biji.txt" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/refconstrutor/demo/ConstrutorDemo.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/model/User.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/refMethod/demo/MethodDemo.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/refField/demo/FieldDemo.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springioc/interfaces/fruit.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springioc/impl/Apple.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springioc/impl/Orange.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springioc/MySpingFactory.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springioc/SpringIocDemo.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springioc/fruit.properties" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springioc/InitProperties.java" />
+        <option value="$PROJECT_DIR$/fruit.properties" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springaop/interfaces/IHello.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springaop/impl/Hello.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springaop/constants/LogLevel.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springaop/interfaces/IOperation.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springaop/Logger.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springaop/impl/Operation.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springaop/SpringAopDemo.java" />
+        <option value="$PROJECT_DIR$/src/ReflectDemo/springaop/DynaProxyHello.java" />
       </list>
     </option>
   </component>
@@ -178,43 +223,18 @@
               <item name="JavaBasicEnhance" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="JavaBasicEnhance" type="b2602c69:ProjectViewProjectNode" />
-              <item name="JavaBasicEnhance" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="AotimaticDemo" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="JavaBasicEnhance" type="b2602c69:ProjectViewProjectNode" />
-              <item name="JavaBasicEnhance" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="LambdaDemo" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="JavaBasicEnhance" type="b2602c69:ProjectViewProjectNode" />
-              <item name="JavaBasicEnhance" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="OptionalDemo" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="JavaBasicEnhance" type="b2602c69:ProjectViewProjectNode" />
-              <item name="JavaBasicEnhance" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="OptionalDemo" type="462c0819:PsiDirectoryNode" />
-              <item name="models" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
       <pane id="Scope" />
+      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1558623939221" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1560069230479" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="project.structure.last.edited" value="Modules" />
@@ -234,13 +254,13 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.TestOptionalDemo2">
-    <configuration name="PredicateApple" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="LambdaDemo.apple.PredicateApple" />
+  <component name="RunManager" selected="Application.SpringAopDemo">
+    <configuration name="ConstrutorDemo" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="ReflectDemo.refconstrutor.demo.ConstrutorDemo" />
       <module name="JavaBasicEnhance" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="LambdaDemo.apple.*" />
+          <option name="PATTERN" value="ReflectDemo.refconstrutor.demo.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -248,12 +268,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TestAtomicDemo" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="AotimaticDemo.TestAtomicDemo" />
+    <configuration name="FieldDemo" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="ReflectDemo.refField.demo.FieldDemo" />
       <module name="JavaBasicEnhance" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="AotimaticDemo.*" />
+          <option name="PATTERN" value="ReflectDemo.refField.demo.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -261,12 +281,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TestLambda" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="LambdaDemo.TestLambda" />
+    <configuration name="MethodDemo" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="ReflectDemo.refMethod.demo.MethodDemo" />
       <module name="JavaBasicEnhance" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="LambdaDemo.*" />
+          <option name="PATTERN" value="ReflectDemo.refMethod.demo.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -274,12 +294,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TestOptionalDemo2" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="OptionalDemo.models.TestOptionalDemo2" />
+    <configuration name="SpringAopDemo" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="ReflectDemo.springaop.SpringAopDemo" />
       <module name="JavaBasicEnhance" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="OptionalDemo.models.*" />
+          <option name="PATTERN" value="ReflectDemo.springaop.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -287,12 +307,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TestSortApple" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="LambdaDemo.apple.TestSortApple" />
+    <configuration name="SpringIocDemo" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="ReflectDemo.springioc.SpringIocDemo" />
       <module name="JavaBasicEnhance" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="LambdaDemo.apple.*" />
+          <option name="PATTERN" value="ReflectDemo.springioc.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -302,11 +322,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.TestOptionalDemo2" />
-        <item itemvalue="Application.TestSortApple" />
-        <item itemvalue="Application.PredicateApple" />
-        <item itemvalue="Application.TestAtomicDemo" />
-        <item itemvalue="Application.TestLambda" />
+        <item itemvalue="Application.SpringAopDemo" />
+        <item itemvalue="Application.SpringIocDemo" />
+        <item itemvalue="Application.FieldDemo" />
+        <item itemvalue="Application.MethodDemo" />
+        <item itemvalue="Application.ConstrutorDemo" />
       </list>
     </recent_temporary>
   </component>
@@ -328,6 +348,7 @@
       <workItem from="1557063411943" duration="2219000" />
       <workItem from="1557239778112" duration="151000" />
       <workItem from="1558704095987" duration="984000" />
+      <workItem from="1559999487864" duration="9688000" />
     </task>
     <task id="LOCAL-00001" summary="添加Java8 Lambda表达式作为入参的例子">
       <created>1556886952233</created>
@@ -347,7 +368,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="9578000" />
+    <option name="totallyTimeSpent" value="19266000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -361,7 +382,7 @@
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1295" height="695" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.283751" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2077607" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
@@ -369,14 +390,14 @@
       <window_info id="Capture Tool" order="5" />
       <window_info id="Favorites" order="6" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3285968" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.3285968" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39964476" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3285968" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Version Control" order="8" visible="true" weight="0.3285968" />
+      <window_info active="true" anchor="bottom" id="Version Control" order="8" visible="true" weight="0.3285968" />
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Terminal" order="10" />
       <window_info anchor="bottom" id="Event Log" order="11" side_tool="true" />
@@ -391,6 +412,37 @@
       <window_info anchor="right" id="Capture Analysis" order="7" />
       <window_info anchor="right" id="Palette&#9;" order="8" />
     </layout>
+    <layout-to-restore>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2077607" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Image Layers" order="2" />
+      <window_info id="Designer" order="3" />
+      <window_info id="UI Designer" order="4" />
+      <window_info id="Capture Tool" order="5" />
+      <window_info id="Favorites" order="6" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.3285968" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39964476" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.3285968" />
+      <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="8" weight="0.3285968" />
+      <window_info anchor="bottom" id="Database Changes" order="9" />
+      <window_info anchor="bottom" id="Terminal" order="10" />
+      <window_info anchor="bottom" id="Event Log" order="11" side_tool="true" />
+      <window_info anchor="bottom" id="Messages" order="12" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Palette" order="3" />
+      <window_info anchor="right" id="Database" order="4" />
+      <window_info anchor="right" id="Theme Preview" order="5" />
+      <window_info anchor="right" id="Maven" order="6" />
+      <window_info anchor="right" id="Capture Analysis" order="7" />
+      <window_info anchor="right" id="Palette&#9;" order="8" />
+    </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
@@ -440,16 +492,21 @@
     <MESSAGE value="添加Optional示例" />
     <option name="LAST_COMMIT_MESSAGE" value="添加Optional示例" />
   </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/ReflectDemo/springaop/SpringAopDemo.java</url>
+          <line>6</line>
+          <properties />
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
   <component name="editorHistoryManager">
     <entry file="file://D:/spring-geektime/geektime-spring-family/FAQ 2019-03/stream-demo/src/main/java/geektime/spring/faq/Demo.java">
       <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/AotimaticDemo/TestAtomicDemo.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="152">
-          <caret line="8" column="38" selection-start-line="8" selection-start-column="38" selection-end-line="8" selection-end-column="38" />
-        </state>
-      </provider>
     </entry>
     <entry file="jar://C:/Program Files/Java/jdk1.8.0_201/src.zip!/java/lang/Iterable.java">
       <provider selected="true" editor-type-id="text-editor">
@@ -462,13 +519,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="231">
           <caret line="481" column="25" lean-forward="true" selection-start-line="481" selection-start-column="25" selection-end-line="481" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/LambdaDemo/TestLambda.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="323">
-          <caret line="17" column="33" selection-start-line="17" selection-start-column="33" selection-end-line="17" selection-end-column="33" />
         </state>
       </provider>
     </entry>
@@ -506,26 +556,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/OptionalDemo/models/Insurance.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="95">
-          <caret line="5" column="35" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
-          <folding>
-            <element signature="e#147#148#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/LambdaDemo/apple/PredicateApple.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="17" column="44" selection-start-line="17" selection-start-column="44" selection-end-line="17" selection-end-column="44" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/LambdaDemo/apple/TestSortApple.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="247">
@@ -552,8 +582,253 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/OptionalDemo/models/TestOptionalDemo2.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="19">
-          <caret line="8" column="32" selection-start-line="8" selection-start-column="32" selection-end-line="8" selection-end-column="32" />
+        <state relative-caret-position="152">
+          <caret line="14" column="9" lean-forward="true" selection-start-line="14" selection-start-column="9" selection-end-line="14" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/LambdaDemo/apple/PredicateApple.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="17" column="44" selection-start-line="17" selection-start-column="44" selection-end-line="17" selection-end-column="44" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/OptionalDemo/models/Insurance.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="95">
+          <caret line="5" column="35" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
+          <folding>
+            <element signature="e#147#148#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/AotimaticDemo/TestAtomicDemo.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="62">
+          <caret line="39" column="22" lean-forward="true" selection-start-line="39" selection-start-column="22" selection-end-line="39" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/LambdaDemo/TestLambda.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="209">
+          <caret line="13" lean-forward="true" selection-start-line="13" selection-end-line="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/biji.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="304">
+          <caret line="16" column="21" lean-forward="true" selection-start-line="16" selection-start-column="21" selection-end-line="16" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/model/User.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="247">
+          <caret line="42" lean-forward="true" selection-start-line="42" selection-end-line="42" />
+          <folding>
+            <element signature="e#235#236#0" expanded="true" />
+            <element signature="e#262#263#0" expanded="true" />
+            <element signature="e#302#303#0" expanded="true" />
+            <element signature="e#334#335#0" expanded="true" />
+            <element signature="e#361#362#0" expanded="true" />
+            <element signature="e#387#388#0" expanded="true" />
+            <element signature="e#422#423#0" expanded="true" />
+            <element signature="e#452#453#0" expanded="true" />
+            <element signature="e#484#485#0" expanded="true" />
+            <element signature="e#513#514#0" expanded="true" />
+            <element signature="e#556#557#0" expanded="true" />
+            <element signature="e#592#593#0" expanded="true" />
+            <element signature="e#626#627#0" expanded="true" />
+            <element signature="e#656#657#0" expanded="true" />
+            <element signature="e#702#703#0" expanded="true" />
+            <element signature="e#740#741#0" expanded="true" />
+            <element signature="e#780#781#0" expanded="true" />
+            <element signature="e#810#811#0" expanded="true" />
+            <element signature="e#862#863#0" expanded="true" />
+            <element signature="e#900#901#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/refconstrutor/demo/ConstrutorDemo.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="76">
+          <caret line="6" column="8" selection-start-line="6" selection-start-column="8" selection-end-line="16" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/refField/demo/FieldDemo.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="152">
+          <caret line="8" column="13" lean-forward="true" selection-start-line="7" selection-start-column="4" selection-end-line="8" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/refMethod/demo/MethodDemo.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="309">
+          <caret line="32" column="30" selection-start-line="32" selection-start-column="30" selection-end-line="32" selection-end-column="30" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/fruit.properties">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret selection-end-line="1" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fruit.properties">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="76">
+          <caret line="4" lean-forward="true" selection-start-line="4" selection-end-line="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/MySpingFactory.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="109">
+          <caret line="8" column="18" selection-start-line="8" selection-start-column="18" selection-end-line="8" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/InitProperties.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="115">
+          <caret line="13" column="29" selection-start-line="13" selection-start-column="29" selection-end-line="13" selection-end-column="29" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/impl/Orange.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="152">
+          <caret line="8" column="5" lean-forward="true" selection-start-line="8" selection-start-column="5" selection-end-line="8" selection-end-column="5" />
+          <folding>
+            <element signature="e#160#161#0" expanded="true" />
+            <element signature="e#196#197#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/impl/Apple.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="34" selection-start-column="8" selection-end-column="34" />
+          <folding>
+            <element signature="e#159#160#0" expanded="true" />
+            <element signature="e#195#196#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/interfaces/fruit.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="57">
+          <caret line="3" column="15" selection-start-line="3" selection-start-column="15" selection-end-line="3" selection-end-column="15" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springioc/SpringIocDemo.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="114">
+          <caret line="10" column="50" lean-forward="true" selection-start-line="10" selection-start-column="50" selection-end-line="10" selection-end-column="50" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/interfaces/IHello.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="76">
+          <caret line="4" column="31" selection-start-line="4" selection-start-column="31" selection-end-line="4" selection-end-column="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/impl/Hello.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="171">
+          <caret line="11" column="38" lean-forward="true" selection-start-line="11" selection-start-column="38" selection-end-line="11" selection-end-column="38" />
+          <folding>
+            <element signature="e#177#178#0" expanded="true" />
+            <element signature="e#198#199#0" expanded="true" />
+            <element signature="e#286#287#0" expanded="true" />
+            <element signature="e#338#339#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/constants/LogLevel.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="57">
+          <caret line="3" column="12" lean-forward="true" selection-start-line="3" selection-start-column="12" selection-end-line="3" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/interfaces/IOperation.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="95">
+          <caret line="5" column="35" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/Logger.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="76">
+          <caret line="6" column="19" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="19" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/impl/Operation.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="193">
+          <caret line="14" column="13" lean-forward="true" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#266#267#0" expanded="true" />
+            <element signature="e#298#299#0" expanded="true" />
+            <element signature="e#456#457#0" expanded="true" />
+            <element signature="e#488#489#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/SpringAopDemo.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="10" column="34" lean-forward="true" selection-start-line="10" selection-start-column="34" selection-end-line="10" selection-end-column="34" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/springaop/DynaProxyHello.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="81">
+          <caret line="28" column="8" lean-forward="true" selection-start-line="28" selection-start-column="8" selection-end-line="28" selection-end-column="8" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
