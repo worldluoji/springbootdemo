@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="70b3106e-92f0-475a-a8f9-28bfc99d56e6" name="Default Changelist" comment="添加Optional示例">
+    <list default="true" id="70b3106e-92f0-475a-a8f9-28bfc99d56e6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JavaBasicEnhance.iml" beforeDir="false" afterPath="$PROJECT_DIR$/JavaBasicEnhance.iml" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path=".idea/libraries/commons_beanutils_1_9_3.xml" />
@@ -14,38 +13,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/ReflectDemo/beansutil/demo/BeanUtilsDemo.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="215">
-              <caret line="29" lean-forward="true" selection-start-line="29" selection-end-line="29" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="jar://$PROJECT_DIR$/src/ReflectDemo/beansutil/demo/commons-beanutils-1.9.3.jar!/org/apache/commons/beanutils/ConvertUtilsBean.class">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="81">
-              <caret line="152" column="36" selection-start-line="152" selection-start-column="36" selection-end-line="152" selection-end-column="36" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="jar://$PROJECT_DIR$/src/ReflectDemo/beansutil/demo/commons-beanutils-1.9.3.jar!/org/apache/commons/beanutils/BeanUtils.class">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="157">
-              <caret line="38" column="47" selection-start-line="38" selection-start-column="43" selection-end-line="38" selection-end-column="47" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -109,7 +77,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -122,30 +89,18 @@
               <item name="JavaBasicEnhance" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="JavaBasicEnhance" type="b2602c69:ProjectViewProjectNode" />
-              <item name="JavaBasicEnhance" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="ReflectDemo" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="JavaBasicEnhance" type="b2602c69:ProjectViewProjectNode" />
-              <item name="JavaBasicEnhance" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="ReflectDemo" type="462c0819:PsiDirectoryNode" />
-              <item name="demo" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
       <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1560072567712" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1560072586970" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/src/ReflectDemo/beansutil/demo/commons-logging-1.2.jar!/" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
@@ -269,6 +224,7 @@
       <workItem from="1557239778112" duration="151000" />
       <workItem from="1558704095987" duration="984000" />
       <workItem from="1559999487864" duration="9688000" />
+      <workItem from="1561383995524" duration="668000" />
     </task>
     <task id="LOCAL-00001" summary="添加Java8 Lambda表达式作为入参的例子">
       <created>1556886952233</created>
@@ -291,11 +247,25 @@
       <option name="project" value="LOCAL" />
       <updated>1560072485657</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="添加Optional示例">
+      <created>1560072544223</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1560072544223</updated>
+    </task>
+    <task id="LOCAL-00005" summary="添加Optional示例">
+      <created>1560072598425</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1560072598425</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="20444000" />
+    <option name="totallyTimeSpent" value="21242000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -309,7 +279,7 @@
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1295" height="695" extended-state="6" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.21099435" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.21422797" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
@@ -324,7 +294,7 @@
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3285968" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
-      <window_info active="true" anchor="bottom" id="Version Control" order="8" visible="true" weight="0.3268206" />
+      <window_info anchor="bottom" id="Version Control" order="8" visible="true" weight="0.3268206" />
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Terminal" order="10" />
       <window_info anchor="bottom" id="Event Log" order="11" side_tool="true" />
@@ -416,9 +386,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="添加Java8 Lambda表达式作为入参的例子" />
-    <MESSAGE value="添加Optional示例" />
     <MESSAGE value="添加BeanUtils示例" />
-    <option name="LAST_COMMIT_MESSAGE" value="添加BeanUtils示例" />
+    <MESSAGE value="添加Optional示例" />
+    <option name="LAST_COMMIT_MESSAGE" value="添加Optional示例" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -754,10 +724,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://$PROJECT_DIR$/src/ReflectDemo/beansutil/demo/commons-beanutils-1.9.3.jar!/org/apache/commons/beanutils/BeanUtils.class">
+    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/beansutil/demo/BeanUtilsDemo.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="157">
-          <caret line="38" column="47" selection-start-line="38" selection-start-column="43" selection-end-line="38" selection-end-column="47" />
+        <state relative-caret-position="101">
+          <caret line="23" column="30" lean-forward="true" selection-start-line="23" selection-start-column="30" selection-end-line="23" selection-end-column="30" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -768,13 +741,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ReflectDemo/beansutil/demo/BeanUtilsDemo.java">
+    <entry file="jar://$PROJECT_DIR$/src/ReflectDemo/beansutil/demo/commons-beanutils-1.9.3.jar!/org/apache/commons/beanutils/BeanUtils.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="215">
-          <caret line="29" lean-forward="true" selection-start-line="29" selection-end-line="29" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
+        <state relative-caret-position="157">
+          <caret line="38" column="47" selection-start-line="38" selection-start-column="43" selection-end-line="38" selection-end-column="47" />
         </state>
       </provider>
     </entry>
