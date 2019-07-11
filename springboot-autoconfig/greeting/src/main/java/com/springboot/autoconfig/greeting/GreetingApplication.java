@@ -10,7 +10,6 @@ public class GreetingApplication implements ApplicationRunner {
         log.info("init GreetingApplication.");
     }
 
-    @Override
     public void run(ApplicationArguments args) throws Exception {
         log.info("hello everyone, we are all like spring.");
     }
