@@ -13,10 +13,12 @@ import org.joda.money.Money;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import javax.validation.ValidationException;
 import java.io.BufferedReader;
@@ -25,6 +27,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+@EnableRedisHttpSession
 @RestController
 @RequestMapping("/coffee")
 @Slf4j
@@ -106,5 +109,15 @@ public class CoffeeController {
             }
         }
         return coffees;
+    }
+
+    @GetMapping(value = "/getSession")
+    public String printSession(HttpSession session, String name) {
+        String storedName = (String)session.getAttribute(name);
+        if (session == null) {
+            session.setAttribute("name", name);
+            storedName =  name;
+        }
+        return "hello" + storedName;
     }
 }

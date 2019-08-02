@@ -20,7 +20,7 @@ if (latte.isPresent()) {
 
 3. 什么时候应该使用缓存? 什么时候应该使用Redis?
 当读多写少的时候（比如读：写=10：1）就适合使用缓存。 如果读写1：1就不该使用缓存了。
-如果一个值长期不变， 而且可以接受一定的延迟更新，就没必要使用Redis了，直接放在Spring提供的默认缓存， 做个超时机制，超时后更新它即可；
+如果一个值长期不变， 而且可以接受一定的延迟更新，就没必要使用Redis了，直接放在内存中， 做个超时机制，超时后更新它即可；
 如果一个值在集群的多台机器中要求保证一致性，就要使用分布式缓存了，例如Redis集群。
 Redis相比Memcached可以持久化数据，支持主备模式，哨兵模式，集群模式。Redis的有序集合也适合做排行榜，或者缓存论坛热门帖子等等。
 
@@ -48,7 +48,7 @@ Redis相比Memcached可以持久化数据，支持主备模式，哨兵模式，
 2) . 配置文件中加入
 spring.cache.type=redis
 spring.cache.cache-names=coffee
-spring.cache.redis.time-to-live=5000
+spring.cache.redis.time-to-live=5000    #如果不填默認是60000ms
 spring.cache.redis.cache-null-values=false
 spring.redis.host=127.0.0.1
 spring.redis.port=6379

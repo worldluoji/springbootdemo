@@ -1,0 +1,43 @@
+參考代碼：StaffJoy->AppConfig 
+Springboot中使用綫程池
+@Configuration
+@EnableAsync
+@Import(value = {StaffjoyRestConfig.class})
+@SuppressWarnings(value = "Duplicates")
+public class AppConfig {
+    public static final String ASYNC_EXECUTOR_NAME = "asyncExecutor";
+
+    @Bean(name=ASYNC_EXECUTOR_NAME)
+    public Executor asyncExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setTaskDecorator(new ContextCopyingDecorator());
+        executor.setCorePoolSize(3);//空閑時，也至少要保證3個人留守
+        executor.setMaxPoolSize(5);//綫程池最大綫程數
+        executor.setQueueCapacity(100); //一定要制定隊列上限，否則可能會造成OOM
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setThreadNamePrefix("AsyncThread-");
+        executor.initialize();
+        return executor;
+    }
+
+}
+1）在应用中，有时没有把某个类注入到IOC容器中，但在运用的时候需要获取该类对应的bean，此时就需要用到@Import注解
+2）ContextCopyingDecorator繼承了TaskDecorator，是爲了在多綫程中傳遞屬性
+public class ContextCopyingDecorator implements TaskDecorator {
+    @Override
+    public Runnable decorate(Runnable runnable) {
+        RequestAttributes context = RequestContextHolder.currentRequestAttributes();
+        return () -> {
+            try {
+                RequestContextHolder.setRequestAttributes(context);
+                runnable.run();
+            } finally {
+                RequestContextHolder.resetRequestAttributes();
+            }
+    };
+ 3）ThreadPoolTaskExecutor實際上就是對Java中提供的ThreadPollExecutor進行了封裝
+
+使用時通過@Async注解制定名字即可：
+@Async(AppConfig.ASYNC_EXECUTOR_NAME)
+public void sendSmsAsync(SmsRequest smsRequest)
+    
