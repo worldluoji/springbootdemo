@@ -1,4 +1,4 @@
-package com.example.srpintbootlogindemo;
+package com.springboot.logindemo;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

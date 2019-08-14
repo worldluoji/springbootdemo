@@ -1,4 +1,4 @@
-package com.example.srpintbootlogindemo.Models;
+package com.springboot.logindemo.Models;
 
 import org.springframework.data.repository.CrudRepository;
 import java.util.List;

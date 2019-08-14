@@ -1,7 +1,7 @@
-package com.example.srpintbootlogindemo.Controllers;
+package com.springboot.logindemo.Controllers;
 
-import com.example.srpintbootlogindemo.Models.User;
-import com.example.srpintbootlogindemo.Models.UserRepository;
+import com.springboot.logindemo.Models.User;
+import com.springboot.logindemo.Models.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

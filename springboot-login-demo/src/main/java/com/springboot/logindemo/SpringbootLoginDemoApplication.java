@@ -1,13 +1,13 @@
-package com.example.srpintbootlogindemo;
+package com.springboot.logindemo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SrpintbootlogindemoApplication {
+public class SpringbootLoginDemoApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SrpintbootlogindemoApplication.class, args);
+        SpringApplication.run(SpringbootLoginDemoApplication.class, args);
     }
 
 }
