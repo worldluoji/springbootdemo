@@ -1,5 +1,6 @@
-package com.springboot.logindemo.Models;
+package com.springboot.logindemo.repository;
 
+import com.springboot.logindemo.model.User;
 import org.springframework.data.repository.CrudRepository;
 import java.util.List;
 
