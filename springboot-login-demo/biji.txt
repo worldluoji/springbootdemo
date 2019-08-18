@@ -51,3 +51,6 @@ public String sayHello(@ModelAttribute PaymentInfo paymentInfo, Model model) thr
     model.addAttribute("re",re);
     return "payinresult";
 }
+
+8.lombok插件中的 @RequiredArgsConstructor注解也是在类上使用，但是这个注解可以生成带参或者不带参的构造方法。
+若带参数，只能是类中所有带有@NonNull注解的和以final修饰的未经初始化的字段。
