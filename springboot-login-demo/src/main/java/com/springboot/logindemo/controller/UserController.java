@@ -50,6 +50,7 @@ public class UserController {
         }
         // Add Cookie
         SessionUtil.loginUser(result.getData(), response, signingToken, externalApex);
+        model.addAttribute("name", result.getData().getName());
         return "index";
     }
 
