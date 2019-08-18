@@ -1,0 +1,23 @@
+这是一个简单例子，例子中没有使用eureka和ribbon，zuul.routes.student.url直接指定了路由到哪个url.
+
+#Zuul routes. Here for /student path, we are routing to localhost:9700 with extra path after that.
+zuul.routes.student.url=http://localhost:9700
+
+#Ribbon is auto integrated with Zuul and for this exercise we are not using that.
+ribbon.eureka.enabled=false
+
+#Will start the gateway server @8091
+server.port=8091
+
+通过http://localhost:8091/student/getStudentDetails/luoji
+就能访问到student的http://localhost:9700/getStudentDetails/luoji
+
+主要是继承ZuulFilter，实现其filterType, filterOrder, shouldFilter, run四个方法。
+并在网关启动类上加入@EnableZuulProxy注解
+@SpringBootApplication
+@EnableZuulProxy
+public class SimpleZuulDemoApplication
+
+
+总体架构上，zuul网关由3部分组成，即过滤器管理模块，过滤器加载模块，过滤器运行时模块。
+过滤器运行时模块又分为前置过滤，运行时过滤和后置过滤三部分。前置路由主要用于认证、选路由和请求日志记录；运行时过滤器用于将请求转发到对应服务进行处理；后置过滤器用于收集统计和度量、曾加HTTP头等。此外还有错误过滤器，主要用于处理网关遇到的异常和错误。
