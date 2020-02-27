@@ -1,5 +1,6 @@
 package com.example.springbootimportdemo;
 
+import com.example.springbootimportdemo.configuration.properties.SuperDream;
 import com.example.springbootimportdemo.importannotation.Charmander;
 import com.example.springbootimportdemo.importannotation.Pikachu;
 import com.example.springbootimportdemo.importannotation.ZeniGame;
@@ -20,6 +21,9 @@ public class SpringbootImportDemoApplication implements ApplicationRunner {
 
 	@Autowired
 	private ZeniGame zeniGame;
+
+	@Autowired
+	private SuperDream superDream;
 
 	public SpringbootImportDemoApplication() {
 	}
@@ -46,10 +50,17 @@ public class SpringbootImportDemoApplication implements ApplicationRunner {
 		}
 	}
 
+	public void testConfigurationProperties() {
+		if (superDream != null) {
+			superDream.say();
+		}
+	}
+
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		testAnnotationImport();
 		testSelectorImport();
 		testImportBeanDefinitionRegistrar();
+		testConfigurationProperties();
 	}
 }
