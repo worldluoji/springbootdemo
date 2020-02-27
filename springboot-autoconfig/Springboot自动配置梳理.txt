@@ -1,0 +1,16 @@
+@SpringBootApplication注解
+	-> @ComponentScan 都比较熟悉，用于扫描@Component, @Service, @Controller等组件，但要注意和启动程序在同一个包下，否则扫描不到
+	-> @EnableAutoConfiguration 这才是重点，那么多自动配置类就靠它了
+		-> @AutoConfigurationPackage 
+			->@Import({Registrar.class}) -> 就回到了例子中的ImportBeanDefinitionRegistrar调用registerBeanDefinitions方法
+				public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
+            		AutoConfigurationPackages.register(registry, (new AutoConfigurationPackages.PackageImport(metadata)).getPackageName());
+        		} 该包名其实就是主配置类所在的包
+		所以，@AutoConfigurationPackage注解就是将主配置类（@SpringBootConfiguration标注的类）的所在包及下面所有子包里面的所有组件扫描到Spring容器中。所以说，默认情况下主配置类包及子包以外的组件，Spring容器是扫描不到的。
+
+		-> @Import({AutoConfigurationImportSelector.class}) 例子中已经有了，启动时会加载AutoConfigurationImportSelector类，调用里面的
+		selectImports方法
+			->getAutoConfigurationEntry->getCandidateConfigurations
+				...->loadSpringFactories 这里会从配置文件
+				"META-INF/spring.factories中去读取读取自动配置类，然后通过前面的@Import注册这些类就被自动加载了
+
