@@ -67,6 +67,8 @@ logging.level.com.feign.feignconsumer.service.ProductService=debug
 #ribbon.ConnectTimeout=5000
 ## 请求处理的超时时间
 #ribbon.ReadTimeout=5000
+连接超时参数 ConnectTimeout，让用户配置建连阶段的最长等待时间；
+读取超时参数 ReadTimeout，用来控制从 Socket 上读取数据的最长等待时间。
 
 #局部配置
 # 对所有操作请求都进行重试
@@ -129,3 +131,30 @@ hystrix-dashboard是一个独立的服务，需要在启动类上配置
 访问被@HystrixCommand注解的方法，就能看到统计
 2.0在 hystrix-bashboard中填的是http://localhost:8090/actuator/hystrix.stream
 1.0是http://localhost:8090/hystrix.stream
+
+16. 为 Feign 配置超时参数的复杂之处在于，Feign 自己有两个超时参数，它使用的负载均衡组件 Ribbon 本身还有相关配置
+全局参数配置，单位是毫秒
+feign.client.config.default.readTimeout=3000
+feign.client.config.default.connectTimeout=3000
+如果要配置 Feign 的读取超时，就必须同时配置连接超时，才能生效。代码参考FeignClientFactoryBean -> configureUsingProperties
+单独给client配置超时时间，其实就是把上面的default换为client的名字：
+feign.client.config.clientsdk.readTimeout=2000
+feign.client.config.clientsdk.connectTimeout=2000
+单独的超时可以覆盖全局超时，这符合预期
+
+同时配置 Feign 和 Ribbon 的超时，以 Feign 为准。这有点反直觉，因为 Ribbon 更底层所以你会觉得后者的配置会生效，但其实不是这样的。
+clientsdk.ribbon.listOfServers=localhost:45678
+feign.client.config.default.readTimeout=3000
+feign.client.config.default.connectTimeout=3000
+ribbon.ReadTimeout=4000
+ribbon.ConnectTimeout=4000
+
+17. 翻看 Ribbon 的源码可以发现，MaxAutoRetreisNextServer 参数默认为 1，也就是 Get 请求在某个服务端节点出现问题（比如读取超时）时，Ribbon 会自动重试一次
+// DefaultClientConfigImpl
+public static final int DEFAULT_MAX_AUTO_RETRIES_NEXT_SERVER = 1;
+public static final int DEFAULT_MAX_AUTO_RETRIES = 0;
+// RibbonLoadBalancedRetryPolicy
+public boolean canRetry(LoadBalancedRetryContext context) { 
+	HttpMethod method = context.getRequest().getMethod(); 
+	return HttpMethod.GET == method || lbContext.isOkToRetryOnAllOperations();
+}
