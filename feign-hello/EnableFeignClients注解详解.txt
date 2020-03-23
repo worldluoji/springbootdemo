@@ -1,0 +1,10 @@
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+@Documented
+@Import({FeignClientsRegistrar.class})
+public @interface EnableFeignClients
+看到Import注解，就知道启动时会调用FeignClientsRegistrar
+FeignClientsRegistrar实现了ImportBeanDefinitionRegistrar接口，最终就会执行
+registerBeanDefinitions  这里其实就是将feign client，以及相关配置参数组装成bean，让spring容器进行股那里
+	->registerDefaultConfiguration
+	->registerFeignClients
