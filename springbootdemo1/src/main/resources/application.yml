@@ -1,7 +1,0 @@
-server:
-  port : 9090
-
-luoji:
-  msg : Hello Spring Boot
-  msg2 : Ni hao,${luoji.msg},${luoji.number}
-  number : ${random.int}

@@ -137,3 +137,4 @@
 /.idea/vcs.xml
 /springboot-autoconfig/.idea/vcs.xml
 /springcloud-zuul-demo/.idea/vcs.xml
+*.class
