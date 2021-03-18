@@ -110,7 +110,8 @@ public List<Coffee> batchAddCoffee(@RequestParam("file") MultipartFile file) {
 
 9. List<->Arrays转换
 Coffee[] coffeeArrays = coffeeList.toArray(new Coffee[]{});
-List<Coffee> coffeeList = Arrrays.asList(coffeeArrays);
+List<Coffee> coffeeList = Stream.of(coffeeArrays)
+                            .collect(Collectors.toList())
 
 10. consumes和produces区别
 consumes： 指定处理请求的提交内容类型（Content-Type），例如application/json, text/html;如果不是该类型则人非请求非法，报400错误。
