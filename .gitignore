@@ -138,3 +138,5 @@
 /springboot-autoconfig/.idea/vcs.xml
 /springcloud-zuul-demo/.idea/vcs.xml
 *.class
+/redis-demo/Redis集训班第一期课件0315.pdf
+.idea
