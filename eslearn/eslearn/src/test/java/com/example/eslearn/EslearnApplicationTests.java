@@ -18,4 +18,9 @@ class EslearnApplicationTests {
 		testController.autoTest();
 	}
 
+	@Test
+	void testAddAndFindTestCases() {
+		testController.addAndFindTestCases();
+	}
+
 }
