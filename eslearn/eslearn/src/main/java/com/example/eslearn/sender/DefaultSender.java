@@ -28,9 +28,21 @@ public class DefaultSender implements Sender {
         //                                 .append("]input content is empty");
         //     throw new IllegalArgumentException(builder.toString());
         // }
-        ResponseEntity<String> result = rest.getForEntity(requestInfo.getServerAddr(), String.class);
-        log.info(result.getBody());
-        return result.getBody();
+        ResponseEntity<String> result;
+        try {
+            result = rest.getForEntity(requestInfo.getServerAddr(), String.class);
+        } catch (Exception e) {
+            String errmsg = new StringBuilder("fail to send to ")
+                                .append(requestInfo.getSystem())
+                                .append(",time:")
+                                .append(requestInfo.getSendTime())
+                                .append("\r\n")
+                                .append(e.toString()).toString();
+            log.error("fail to send to ", requestInfo.getSystem(), requestInfo.getSendTime(), e);
+            return errmsg;
+        }
+       
+        return result != null ? result.getBody() : "";
     }
     
 }
