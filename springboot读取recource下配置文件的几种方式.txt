@@ -1,0 +1,22 @@
+最近在项目中涉及到Excle的导入功能，通常是我们定义完模板供用户下载，用户按照模板填写完后上传；这里待下载模板位置为resource/excelTemplate/test.xlsx，尝试了四种读取方式，并且测试了四种读取方式分别的windows开发环境下(IDE中)读取和生产环境(linux下jar包运行读取)。
+第一种：
+
+ClassPathResource classPathResource = new ClassPathResource("excleTemplate/test.xlsx");
+InputStream inputStream =classPathResource.getInputStream();
+第二种：
+
+InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("excleTemplate/test.xlsx");
+第三种：
+
+InputStream inputStream = this.getClass().getResourceAsStream("/excleTemplate/test.xlsx");
+第四种：
+
+File file = ResourceUtils.getFile("classpath:excleTemplate/test.xlsx");
+InputStream inputStream = new FileInputStream(file);
+经测试：
+前三种方法在开发环境(IDE中)和生产环境(linux部署成jar包)都可以读取到，第四种只有开发环境 时可以读取到，生产环境读取失败。
+推测主要原因是springboot内置tomcat，打包后是一个jar包，无法直接读取jar包中的文件，读取只能通过类加载器读取。
+前三种都可以读取到其实殊途同归，直接查看底层代码都是通过类加载器读取文件流，类加载器可以读取jar包中的编译后的class文件，当然也是可以读取jar包中的excle模板了。
+
+其中cst文件中是编译后class文件存放位置，excleTemplate是模板存放位置，类加载器读取的是cst下class文件，同样可以读取excleTemplate下的模板的文件流了。
+所以总结一下：假如文件是在jar包中，读取方式应当使用基于类加载器读取文件流的方式，比如前三种方法；使用基于java中File方式的读取，在jar包情况下是读取不到的，比方说第四种。
