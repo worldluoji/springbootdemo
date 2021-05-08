@@ -33,3 +33,24 @@ protected void inject(Object bean, @Nullable String beanName, @Nullable Property
 解决方案：
 可以使用scope注解的proxyMode，设置成target_class，这样注入到controller的bean就是代理对象了，每次都会从beanfactory里面重新拿过
 @Scope(value = "prototype", proxyMode = ScopedProxyMode.TARGET_CLASS)
+
+拓展：
+@Scope(value=ConfigurableBeanFactory.SCOPE_PROTOTYPE)这个是说在每次注入的时候回自动创建一个新的bean实例
+
+@Scope(value=ConfigurableBeanFactory.SCOPE_SINGLETON)单例模式，在整个应用中只能创建一个实例
+
+@Scope(value=WebApplicationContext.SCOPE_GLOBAL_SESSION)全局session中的一般不常用
+
+@Scope(value=WebApplicationContext.SCOPE_APPLICATION)在一个web应用中只创建一个实例
+
+@Scope(value=WebApplicationContext.SCOPE_REQUEST)在一个请求中创建一个实例
+
+@Scope(value=WebApplicationContext.SCOPE_SESSION)每次创建一个会话中创建一个实例
+
+里面还有个属性
+
+proxyMode=ScopedProxyMode.INTERFACES创建一个JDK代理模式
+
+proxyMode=ScopedProxyMode.TARGET_CLASS基于类的代理模式
+
+proxyMode=ScopedProxyMode.NO（默认）不进行代理
