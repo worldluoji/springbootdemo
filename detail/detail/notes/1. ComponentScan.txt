@@ -1,0 +1,42 @@
+当 Spring Boot 启动时，ComponentScan 的启用意味着会去扫描出所有定义的 Bean，那么扫描什么位置呢？
+这是由 ComponentScan 注解的 basePackages 属性指定的:
+
+public @interface ComponentScan {
+
+/**
+ * Base packages to scan for annotated components.
+ * <p>{@link #value} is an alias for (and mutually exclusive with) this
+ * attribute.
+ * <p>Use {@link #basePackageClasses} for a type-safe alternative to
+ * String-based package names.
+ */
+@AliasFor("value")
+String[] basePackages() default {};
+//省略其他非关键代码
+}
+
+在 basePackages 没有指定时，所以默认为空（即{}）：
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@SpringBootConfiguration
+@EnableAutoConfiguration
+@ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+      @Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
+public @interface SpringBootApplication {
+//省略非关键代码
+}
+
+
+此时扫描的是什么包？
+这里不妨带着这个问题去调试下（调试位置参考 ComponentScanAnnotationParser#parse 方法, 
+ctrl + p, 搜索时输入#ComponentScanAnnotationParser）
+可以看到如下代码：
+if (basePackages.isEmpty()) {
+    basePackages.add(ClassUtils.getPackageName(declaringClass));
+}
+这里可以debug查看declaringClass，其实就是我们的Application.java所在的包。
+
+@ComponentScans(value = { @ComponentScan(value = "com.spring.puzzle.class1.example1.controller") })
+顾名思义，ComponentScans 相比较 ComponentScan 多了一个s，支持多个包的扫描范围指定。

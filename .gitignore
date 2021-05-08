@@ -140,3 +140,9 @@
 *.class
 /redis-demo/Redis集训班第一期课件0315.pdf
 .idea
+detail/detail/.mvn/wrapper/maven-wrapper.properties
+detail/detail/.mvn/wrapper/maven-wrapper.jar
+detail/detail/mvnw.cmd
+detail/detail/mvnw
+detail/detail/.mvn/wrapper/MavenWrapperDownloader.java
+detail/detail/.mvn/wrapper/maven-wrapper.jar
