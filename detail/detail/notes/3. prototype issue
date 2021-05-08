@@ -1,0 +1,35 @@
+
+参考HelloWorldController和Case3Service:
+当一个属性成员 case3 声明为 @Autowired 后，那么在创建 HelloWorldController 这个 Bean 时，
+会先使用构造器反射出实例，然后来装配各个标记为 @Autowired 的属性成员
+（装配方法参考 AbstractAutowireCapableBeanFactory#populateBean）。
+具体到执行过程，它会使用很多 BeanPostProcessor 来做完成工作，
+其中一种是 AutowiredAnnotationBeanPostProcessor，
+它会通过 DefaultListableBeanFactory#findAutowireCandidates 寻找到 Case3Service 类型的 Bean，
+然后设置给对应的属性（即 serviceImpl 成员）。
+关键执行步骤可参考 AutowiredAnnotationBeanPostProcessor.AutowiredFieldElement#inject:
+
+protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
+   Field field = (Field) this.member;
+   Object value;
+   //寻找“bean”
+   if (this.cached) {
+      value = resolvedCachedArgument(beanName, this.cachedFieldValue);
+   }
+   else {
+     //省略其他非关键代码
+     value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
+   }
+   if (value != null) {
+      //将bean设置给成员字段
+      //这个 field 的执行只发生了一次，所以后续就固定起来了，它并不会因为 Case3Service 标记了 SCOPE_PROTOTYPE 而改变。
+      ReflectionUtils.makeAccessible(field);
+      field.set(bean, value);
+   }
+}
+
+当一个单例的 Bean，使用 autowired 注解标记其属性时，你一定要注意这个属性值会被固定下来.
+
+解决方案：
+可以使用scope注解的proxyMode，设置成target_class，这样注入到controller的bean就是代理对象了，每次都会从beanfactory里面重新拿过
+@Scope(value = "prototype", proxyMode = ScopedProxyMode.TARGET_CLASS)
