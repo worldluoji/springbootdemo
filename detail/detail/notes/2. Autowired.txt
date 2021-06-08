@@ -1,0 +1,135 @@
+例子：
+@RestController
+@Slf4j
+@Validated
+public class StudentController {
+    @Autowired
+    DataService dataService;
+
+    @RequestMapping(path = "students/{id}", method = RequestMethod.DELETE)
+    public void deleteStudent(@PathVariable("id") @Range(min = 1,max = 100) int id){
+        dataService.deleteStudent(id);
+    };
+}
+
+@Autowired发生的位置和核心过程:
+当创建一个 Bean 时，调用的方法是 AbstractAutowireCapableBeanFactory#createBeanInstance。
+它主要包含两大基本步骤：寻找构造器和通过反射调用构造器创建实例。
+1) AbstractAutowireCapableBeanFactory#createBeanInstance 方法：
+通过构造器反射构造出这个 Bean，在此案例中相当于构建出 StudentController 的实例，但此时它的属性还为null；
+Spring 会先执行 determineConstructorsFromBeanPostProcessors 方法来获取构造器，
+然后通过 autowireConstructor 方法带着构造器去创建实例:
+
+// Candidate constructors for autowiring?
+Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
+      mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+   return autowireConstructor(beanName, mbd, ctors, args);
+}
+
+autowireConstructor 方法要创建实例，不仅需要知道是哪个构造器，还需要知道构造器对应的参数,
+这点从最后创建实例的方法名也可以看出，参考如下（即 ConstructorResolver#instantiate）
+private Object instantiate(
+      String beanName, RootBeanDefinition mbd, Constructor<?> constructorToUse, Object[] argsToUse) 
+
+
+继续查看ConstructorResolver#autowireConstructor，发现参数从下面方法获取：
+argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames,
+      getUserDeclaredConstructor(candidate), autowiring, candidates.length == 1);
+
+从createArgumentArray方法可以看到，参数类型是字符串时，是从beanFactory中获取的：
+->resolveAutowiredArgument
+    ->this.beanFactory.resolveDependency(new DependencyDescriptor(param, true), beanName, autowiredBeanNames, typeConverter);
+
+createArgumentArray 方法来构建调用构造器的参数数组，而这个方法的最终实现是从 BeanFactory 中获取 Bean，
+可以参考下述调用：
+return this.beanFactory.resolveDependency(
+   new DependencyDescriptor(param, true), beanName, autowiredBeanNames, typeConverter);
+
+如果找不到对应的 Bean 就会抛出异常，提示装配失败。这也是为什么Case2Service中如过没有将入参servcieName
+注入到spring容器中（作为一个bean）， 就会报错。
+    
+2) AbstractAutowireCapableBeanFactory#populate 方法：填充（即设置）这个 Bean，
+在本案例中，相当于设置 StudentController 实例中被 @Autowired 标记的 dataService 属性成员。
+填充”过程的关键就是执行各种 BeanPostProcessor 处理器:
+protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
+      //省略非关键代码
+      for (BeanPostProcessor bp : getBeanPostProcessors()) {
+         if (bp instanceof InstantiationAwareBeanPostProcessor) {
+            InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+            PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
+          //省略非关键代码
+         }
+      }
+   }   
+}
+StudentController 含有标记为 Autowired 的成员属性 dataService，
+所以会使用到 AutowiredAnnotationBeanPostProcessor（BeanPostProcessor 中的一种）来完成“装配”过程：
+找出合适的 DataService 的 bean 并设置给 StudentController#dataService。
+这个过程分为两个步骤：
+1）寻找出所有需要依赖注入的字段和方法，参考 AutowiredAnnotationBeanPostProcessor#postProcessProperties
+InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
+2）根据依赖信息寻找出依赖并完成注入，以字段注入为例，参考 AutowiredFieldElement#inject
+@Override
+protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
+   Field field = (Field) this.member;
+   Object value;
+   //省略非关键代码
+      try {
+          DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
+         //寻找“依赖”，desc为"dataService"的DependencyDescriptor
+         value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
+      }
+      
+   }
+   //省略非关键代码
+   if (value != null) {
+      ReflectionUtils.makeAccessible(field);
+      //装配“依赖”
+      field.set(bean, value);
+   }
+}
+
+这里的关键在于resolveDependency，会寻找“依赖”：
+@Autowired
+DataService dataService;
+所以也是为什么如果有多种DataService @Autowired注入时，如果不适用@Primary注解、或者不指定优先级等就会报错：
+require a single bean, but 2 were found...
+
+最终优先级是通过：DefaultListableBeanFactory#determineAutowireCandidate
+
+protected String determineAutowireCandidate(Map<String, Object> candidates, DependencyDescriptor descriptor) {
+      Class<?> requiredType = descriptor.getDependencyType();
+      String primaryCandidate = determinePrimaryCandidate(candidates, requiredType);
+      if (primaryCandidate != null) {
+         return primaryCandidate;
+      }
+      String priorityCandidate = determineHighestPriorityCandidate(candidates, requiredType);
+      if (priorityCandidate != null) {
+         return priorityCandidate;
+      }
+      // Fallback
+      for (Map.Entry<String, Object> entry : candidates.entrySet()) {
+         String candidateName = entry.getKey();
+         Object beanInstance = entry.getValue();
+         if ((beanInstance != null && this.resolvableDependencies.containsValue(beanInstance)) ||
+               matchesBeanName(candidateName, descriptor.getDependencyName())) {
+            return candidateName;
+         }
+      }
+      return null;
+   }
+
+总结一下：
+1）如上代码所示，优先级的决策是先根据 @Primary 来决策，其次是 @Priority 决策，
+最后是根据 Bean 名字的严格匹配来决策。
+如果这些帮助决策优先级的注解都没有被使用，名字也不精确匹配，则返回 null，告知无法决策出哪种最合适。
+
+2）@Autowired要求是必须注入的（即 required 保持默认值为 true），
+或者注解的属性类型并不可以接受多个Bean的类型，例如数组、Map、集合。
+这点可以参考 DefaultListableBeanFactory#indicatesMultipleBeans
+private boolean indicatesMultipleBeans(Class<?> type) {
+   return (type.isArray() || (type.isInterface() &&
+         (Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type))));
+}
+

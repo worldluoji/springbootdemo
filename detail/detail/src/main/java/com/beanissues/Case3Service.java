@@ -1,4 +1,4 @@
-package com.case1;
+package com.beanissues;
 
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;

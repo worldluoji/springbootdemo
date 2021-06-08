@@ -1,0 +1,265 @@
+1. Spring启动大致流程
+第一，将一些必要的系统类，比如 Bean 的后置处理器类，注册到 Spring 容器，比如CommonAnnotationBeanPostProcessor 类；
+第二，将这些后置处理器实例化，并注册到 Spring 的容器中；
+第三，实例化所有用户定制类，调用后置处理器进行辅助装配、类初始化等等。
+
+补充知识点：
+1）很多必要的系统类，尤其是 Bean 后置处理器（比如 CommonAnnotationBeanPostProcessor、AutowiredAnnotationBeanPostProcessor 等），
+都是被 Spring 统一加载和管理的，并在 Spring 中扮演了非常重要的角色；
+2）通过 Bean 后置处理器，Spring 能够非常灵活地在不同的场景调用不同的后置处理器，
+比如 PostConstruct 注解，它的处理逻辑就需要用到 CommonAnnotationBeanPostProcessor（继承自 InitDestroyAnnotationBeanPostProcessor）这个后置处理器。
+
+2. Bean的单例初始化流程
+即 Spring 初始化单例类的一般过程，基本都是 getBean()->doGetBean()->getSingleton()，
+如果发现 Bean 不存在，则调用 createBean()->doCreateBean() 进行实例化。
+
+
+protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
+    throws BeanCreationException {
+    //省略非关键代码
+    if (instanceWrapper == null) {
+      instanceWrapper = createBeanInstance(beanName, mbd, args);
+    }
+    final Object bean = instanceWrapper.getWrappedInstance();
+
+    //省略非关键代码
+    Object exposedObject = bean;
+    try {
+       populateBean(beanName, mbd, instanceWrapper);
+       exposedObject = initializeBean(beanName, exposedObject, mbd);
+    }
+    catch (Throwable ex) {
+    }
+    //省略非关键代码
+}
+
+createBeanInstance、 populateBean、 initializeBean，
+分别对应实例化 Bean，注入 Bean 依赖，以及初始化 Bean （例如执行 @PostConstruct 标记的方法 ）这三个功能。
+
+createBeanInstance方法通过依次调用：
+DefaultListableBeanFactory.instantiateBean() 
+    -> SimpleInstantiationStrategy.instantiate()
+        ->最终执行到BeanUtils.instantiateClass()
+
+
+public static <T> T instantiateClass(Constructor<T> ctor, Object... args) throws BeanInstantiationException {
+    Assert.notNull(ctor, "Constructor must not be null");
+    try {
+        ReflectionUtils.makeAccessible(ctor);
+        return (KotlinDetector.isKotlinReflectPresent() && KotlinDetector.isKotlinType(ctor.getDeclaringClass()) ?
+                KotlinDelegate.instantiateClass(ctor, args) : ctor.newInstance(args));
+    }
+    catch (InstantiationException ex) {
+        throw new BeanInstantiationException(ctor, "Is it an abstract class?", ex);
+    }
+    //省略非关键代码
+}
+
+
+// 错误示例，会导致空指针异常
+@Component
+public class LightMgrService {
+  @Autowired
+  private LightService lightService;
+  public LightMgrService() {
+    lightService.check();
+  }
+}
+最终将调用 ctor.newInstance() 方法实例化用户定制类 LightMgrService，
+而默认构造器显然是在类实例化的时候被自动调用的，Spring 也无法控制。
+而此时负责自动装配的 populateBean 方法还没有被执行，LightMgrService 的属性 LightService 还是 null，
+因而得到空指针异常也在情理之中.
+
+解决思路：
+实际上，Spring 在类属性完成注入之后，会回调用户定制的初始化方法。
+即在 populateBean 方法之后，会调用 initializeBean 方法：
+
+protected Object initializeBean(final String beanName, final Object bean, @Nullable RootBeanDefinition mbd) {
+    //省略非关键代码 
+    if (mbd == null || !mbd.isSynthetic()) {
+       wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+    }
+    try {
+       invokeInitMethods(beanName, wrappedBean, mbd);
+    }
+    //省略非关键代码 
+ }
+
+ applyBeanPostProcessorsBeforeInitialization 和 invokeInitMethods 这两个关键方法的执行，
+ 它们分别处理了@PostConstruct 注解和 InitializingBean 接口这两种不同的初始化方案的逻辑。
+ 1）@PostConstruct 会在构造方法之后执行
+ applyBeanPostProcessorsBeforeInitialization方法 最终执行到后置处理器
+ InitDestroyAnnotationBeanPostProcessor 的 buildLifecycleMetadata
+ 方法（CommonAnnotationBeanPostProcessor的父类）：
+ 
+private LifecycleMetadata buildLifecycleMetadata(final Class<?> clazz) {
+    //省略非关键代码 
+    do {
+       //省略非关键代码
+       final List<LifecycleElement> currDestroyMethods = new ArrayList<>();
+       ReflectionUtils.doWithLocalMethods(targetClass, method -> {
+       //此处的 this.initAnnotationType 值，即为 PostConstruct.class
+          if (this.initAnnotationType != null && method.isAnnotationPresent(this.initAnnotationType)) {
+             LifecycleElement element = new LifecycleElement(method);
+             currInitMethods.add(element);
+   //非关键代码          
+ }
+
+ 2） invokeInitMethods 与 InitializingBean 接口
+ invokeInitMethods 方法会判断当前 Bean 是否实现了 InitializingBean 接口，
+ 只有在实现了该接口的情况下，Spring 才会调用该 Bean 的接口实现方法 afterPropertiesSet()。
+ 
+protected void invokeInitMethods(String beanName, final Object bean, @Nullable RootBeanDefinition mbd)
+throws Throwable {
+boolean isInitializingBean = (bean instanceof InitializingBean);
+if (isInitializingBean && (mbd == null || !mbd.isExternallyManagedInitMethod("afterPropertiesSet"))) {
+// 省略非关键代码 
+else {
+   ((InitializingBean) bean).afterPropertiesSet();
+}
+}
+// 省略非关键代码 
+}
+
+3. bean中的shutdown方法
+ConfigurableApplicationContext context = SpringApplication.run(DetailApplication.class, args);
+context.close(); // 将上下文关闭，即关闭当前的 Spring 容器
+
+通过调试，我们发现只有通过使用 @Bean 注解注册到 Spring 容器的对象，
+才会在 Spring 容器被关闭的时候自动调用 shutdown 方法，
+而使用 @Component（Service 也是一种 Component）将当前类自动注入到 Spring 容器时，
+shutdown 方法则不会被自动执行。
+
+使用 @Bean 注解的方法所注册的 Bean 对象，如果用户不设置 destroyMethod 属性，
+则其属性值为 AbstractBeanDefinition.INFER_METHOD。而使用@Service注解的类，destroyMethod为null.
+此时 Spring 会检查当前 Bean 对象的原始类中是否有名为 shutdown 或者 close 的方法，
+如果有，此方法会被 Spring 记录下来，并在容器被销毁时自动执行；当然如若没有，那么自然什么都不会发生。
+
+查找 INFER_METHOD 枚举值的引用，很容易就找到了使用该枚举值的方法
+DisposableBeanAdapter#inferDestroyMethodIfNecessary：
+
+private String inferDestroyMethodIfNecessary(Object bean, RootBeanDefinition beanDefinition) {
+    String destroyMethodName = beanDefinition.getDestroyMethodName();
+    if (AbstractBeanDefinition.INFER_METHOD.equals(destroyMethodName) ||(destroyMethodName == null && bean instanceof AutoCloseable)) {
+       if (!(bean instanceof DisposableBean)) {
+          try {
+             //尝试查找 close 方法
+             return bean.getClass().getMethod(CLOSE_METHOD_NAME).getName();
+          }
+          catch (NoSuchMethodException ex) {
+             try {
+                //尝试查找 shutdown 方法
+                return bean.getClass().getMethod(SHUTDOWN_METHOD_NAME).getName();
+             }
+             catch (NoSuchMethodException ex2) {
+                // no candidate destroy method found
+             }
+          }
+       }
+       return null;
+    }
+    return (StringUtils.hasLength(destroyMethodName) ? destroyMethodName : null);
+}
+代码逻辑和 Bean 注解类中对于 destroyMethod 属性的注释完全一致 destroyMethodName 如果等于 INFER_METHOD，
+且当前类没有实现 DisposableBean 接口，那么首先查找类的 close 方法;
+如果找不到，就在抛出异常后继续查找 shutdown 方法；如果找到了，则返回其方法名（close 或者 shutdown） 
+
+接着，继续逐级查找引用，最终得到的调用链从上到下为:
+doCreateBean
+    ->registerDisposableBeanIfNecessary
+        ->registerDisposableBean(new DisposableBeanAdapter)
+            ->inferDestroyMethodIfNecessary
+
+// 再看看registerDisposableBean
+public void registerDisposableBean(String beanName, DisposableBean bean) {
+    //省略其他非关键代码
+    synchronized (this.disposableBeans) {
+        this.disposableBeans.put(beanName, bean);
+    }
+    //省略其他非关键代码
+}
+
+在 registerDisposableBean 方法内，DisposableBeanAdapter 类
+（其属性 destroyMethodName 记录了使用哪种 destory 方法）被实例化并添加到 
+DefaultSingletonBeanRegistry#disposableBeans 属性内，
+disposableBeans 将暂存这些  DisposableBeanAdapter 实例，
+直到 AnnotationConfigApplicationContext 的 close 方法被调用。
+
+而当 AnnotationConfigApplicationContext 的 close 方法被调用时，
+即当 Spring 容器被销毁时，最终会调用到 DefaultSingletonBeanRegistry#destroySingleton。此方法将遍历 disposableBeans 属性逐一获取 DisposableBean，依次调用其中的 close 或者 shutdown  方法：
+
+所以我们应该避免在 Java 类中定义一些带有特殊意义动词。
+
+4. 为什么@Service注解的类，shutdown方法不会被执行
+如果想要执行，则必须要添加 DisposableBeanAdapter，而它的添加是有条件的：
+protected void registerDisposableBeanIfNecessary(String beanName, Object bean, RootBeanDefinition mbd) {
+    AccessControlContext acc = (System.getSecurityManager() != null ? getAccessControlContext() : null);
+    if (!mbd.isPrototype() && requiresDestruction(bean, mbd)) {
+       if (mbd.isSingleton()) {
+          // Register a DisposableBean implementation that performs all destruction
+          // work for the given bean: DestructionAwareBeanPostProcessors,
+          // DisposableBean interface, custom destroy method.
+          registerDisposableBean(beanName,
+                new DisposableBeanAdapter(bean, beanName, mbd, getBeanPostProcessors(), acc));
+       }
+       else {
+         //省略非关键代码
+       }
+    }
+ }
+ 继续跟进requiresDestruction->DisposableBeanAdapter#hasDestroyMethod：
+ 
+public static boolean hasDestroyMethod(Object bean, RootBeanDefinition beanDefinition) {
+    if (bean instanceof DisposableBean || bean instanceof AutoCloseable) {
+       return true;
+    }
+    String destroyMethodName = beanDefinition.getDestroyMethodName();
+    if (AbstractBeanDefinition.INFER_METHOD.equals(destroyMethodName)) {
+       return (ClassUtils.hasMethod(bean.getClass(), CLOSE_METHOD_NAME) ||
+             ClassUtils.hasMethod(bean.getClass(), SHUTDOWN_METHOD_NAME));
+    }
+    return StringUtils.hasLength(destroyMethodName);
+ }
+
+ 如果我们是使用 @Service 来产生 Bean 的，那么在上述代码中我们获取的 destroyMethodName 其实是 null,
+ 所以该方法会返回flase
+
+
+5. 对 doCreateBean 方法做一个小小的总结了。
+可以说 doCreateBean 管理了 Bean 的整个生命周期中几乎所有的关键节点，直接负责了 Bean 对象的生老病死，其主要功能包括：
+Bean实例的创建 -> createBeanInstance；
+Bean对象依赖的注入 -> populateBean；
+Bean定制初始化（比如调用@PostConstruct注解的方法） -> initializeBean；
+Disposable方法的注册 -> registerDisposableBeanIfNecessary。
+
+
+protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
+      throws BeanCreationException {
+   //省略非关键代码 
+   if (instanceWrapper == null) {
+      instanceWrapper = createBeanInstance(beanName, mbd, args);
+   }
+   //省略非关键代码
+   // Initialize the bean instance.
+   Object exposedObject = bean;
+   try {
+      populateBean(beanName, mbd, instanceWrapper);
+      exposedObject = initializeBean(beanName, exposedObject, mbd);
+   }
+   //省略非关键代码 
+   // Register bean as disposable.
+   try {
+      registerDisposableBeanIfNecessary(beanName, bean, mbd);
+   }
+   catch (BeanDefinitionValidationException ex) {
+      throw new BeanCreationException(
+            mbd.getResourceDescription(), beanName, "Invalid destruction signature", ex);
+   }
+
+   return exposedObject;
+}
+
+DefaultListableBeanFactory 类是 Spring Bean 的灵魂，而核心就是其中的 doCreateBean 方法，
+它掌控了 Bean 实例的创建、Bean 对象依赖的注入、定制类初始化方法的回调以及 Disposable 方法的注册等全部关键节点。
+
+后置处理器是 Spring 中最优雅的设计之一，对于很多功能注解的处理都是借助于后置处理器来完成的。

@@ -1,4 +1,4 @@
-package com.case1;
+package com.beanissues;
 
 import org.springframework.stereotype.Service;
 

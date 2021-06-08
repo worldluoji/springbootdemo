@@ -1,6 +1,6 @@
 package com.example.detail.controllers;
 
-import com.case1.Case3Service;
+import com.beanissues.Case3Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
