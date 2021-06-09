@@ -133,3 +133,32 @@ private boolean indicatesMultipleBeans(Class<?> type) {
          (Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type))));
 }
 
+3) 使用@Autowired注解时，还可以使用@Qualifier("cassandraDataService")注解去指定使用哪一个Service，
+这样也能避免不知道选哪个Service导致的报错:
+@Autowired
+@Qualifier("cassandraDataService")
+private DataService dataService;
+
+具体可以参考DefaultListableBeanFactory#doResolveDependency：：
+
+@Nullable
+public Object doResolveDependency(DependencyDescriptor descriptor, @Nullable String beanName,
+      @Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
+      //省略其他非关键代码
+      //寻找bean过程
+      Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
+      if (matchingBeans.isEmpty()) {
+         if (isRequired(descriptor)) {
+            raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
+         }
+         return null;
+      }
+      //省略其他非关键代码
+      if (matchingBeans.size() > 1) {
+         //省略多个bean的决策过程，即案例1重点介绍内容
+      } 
+     //省略其他非关键代码
+}
+这里要注意：
+如果没有显示指定bean的名字（比如@Service("cassandraDataService")指定名字为cassandraDataService），
+一个类名是以两个大写字母开头的，则首字母不变，其它情况下默认首字母变成小写。
