@@ -10,7 +10,7 @@
 比如 PostConstruct 注解，它的处理逻辑就需要用到 CommonAnnotationBeanPostProcessor（继承自 InitDestroyAnnotationBeanPostProcessor）这个后置处理器。
 
 2. Bean的单例初始化流程
-即 Spring 初始化单例类的一般过程，基本都是 getBean()->doGetBean()->getSingleton()，
+即 Spring 初始化单例类的一般过程，基本都是 AbstractBeanFactory#getBean()->doGetBean()->getSingleton()，
 如果发现 Bean 不存在，则调用 createBean()->doCreateBean() 进行实例化。
 
 

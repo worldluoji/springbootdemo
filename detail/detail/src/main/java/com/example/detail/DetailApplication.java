@@ -12,7 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScans;
 
-@ComponentScans(value = {@ComponentScan(value = "com.beanissues"), @ComponentScan(value = "com.example.detail")})
+@ComponentScans(value = {@ComponentScan(value = "com.beanissues"), @ComponentScan(value = "com.example.detail"), @ComponentScan(value = "com.aop")})
 @SpringBootApplication
 public class DetailApplication implements ApplicationRunner {
 

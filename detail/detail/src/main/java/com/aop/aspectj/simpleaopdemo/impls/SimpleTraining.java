@@ -3,7 +3,7 @@ package com.aop.aspectj.simpleaopdemo.impls;
 import com.aop.aspectj.simpleaopdemo.interfaces.ITraining;
 import org.springframework.stereotype.Component;
 
-@Component("SimpleTraining")
+@Component("simpleTraining")
 public class SimpleTraining implements ITraining {
     @Override
     public void train() {

@@ -1,0 +1,141 @@
+1. AOP
+Spring AOP 则利用 CGlib 和 JDK 动态代理等方式来实现运行期动态方法增强，
+其目的是将与业务无关的代码单独抽离出来，使其逻辑不再与业务代码耦合，从而降低系统的耦合性，提高程序的可重用性和开发效率。
+因而 AOP 便成为了日志记录、监控管理、性能统计、异常处理、权限管理、统一认证等各个方面被广泛使用的技术。
+Spring 在运行期帮我们把切面中的代码逻辑动态“织入”到了容器对象方法内，所以说 AOP 本质上就是一个代理模式。
+
+2. 在 Spring Boot 中，我们一般只要添加以下依赖就可以直接使用 AOP 功能：
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-aop</artifactId>
+</dependency>
+而对于非 Spring Boot 程序，除了添加相关 AOP 依赖项外，
+我们还常常会使用 @EnableAspectJAutoProxy 来开启 AOP 功能。
+这个注解类引入（Import）AspectJAutoProxyRegistrar，
+它通过实现 ImportBeanDefinitionRegistrar 的接口方法来完成 AOP 相关 Bean 的准备工作。
+
+3. 案例1：this引用无法触发代理(理解创建代理对象的过程)
+
+@Service
+public class ElectricService {
+
+    public void charge() throws Exception {
+        System.out.println("Electric charging ...");
+        // 使用this只是一个普通对象，没办法触发切面的操作
+        this.pay();
+    }
+
+    public void pay() throws Exception {
+        System.out.println("Pay with alipay ...");
+        Thread.sleep(1000);
+    }
+
+}
+
+@Aspect
+@Service
+@Slf4j
+public class AopConfig {
+    @Around("execution(* com.spring.puzzle.class5.example1.ElectricService.pay())"")
+    public void recordPayPerformance(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.currentTimeMillis();
+        joinPoint.proceed();
+        long end = System.currentTimeMillis();
+        System.out.println("Pay method time cost（ms）: " + (end - start));
+    }
+}
+
+创建代理对象的时机就是创建一个 Bean 的时候，
+而创建的的关键工作其实是由 AnnotationAwareAspectJAutoProxyCreator 完成的。
+它本质上是一种 BeanPostProcessor。
+所以它的执行是在完成原始 Bean 构建后的初始化 Bean（initializeBean）过程中。
+
+AbstractAutowireCapableBeanFactory 
+   -> doCreateBean
+       ->initializeBean
+
+protected Object initializeBean(String beanName, Object bean, @Nullable RootBeanDefinition mbd) {
+      if (System.getSecurityManager() != null) {
+         AccessController.doPrivileged(() -> {
+            this.invokeAwareMethods(beanName, bean);
+            return null;
+         }, this.getAccessControlContext());
+      } else {
+         this.invokeAwareMethods(beanName, bean);
+      }
+
+      Object wrappedBean = bean;
+      if (mbd == null || !mbd.isSynthetic()) {
+         wrappedBean = this.applyBeanPostProcessorsBeforeInitialization(bean, beanName);
+      }
+
+      try {
+         this.invokeInitMethods(beanName, wrappedBean, mbd);
+      } catch (Throwable var6) {
+         throw new BeanCreationException(mbd != null ? mbd.getResourceDescription() : null, beanName, "Invocation of init method failed", var6);
+      }
+
+      if (mbd == null || !mbd.isSynthetic()) {
+         wrappedBean = this.applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+      }
+
+      return wrappedBean;
+}
+
+applyBeanPostProcessorsAfterInitialization
+   ->AbstractAutoProxyCreator#postProcessAfterInitialization
+   
+public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
+   if (bean != null) {
+      Object cacheKey = getCacheKey(bean.getClass(), beanName);
+      if (this.earlyProxyReferences.remove(cacheKey) != bean) {
+         return wrapIfNecessary(bean, beanName, cacheKey);
+      }
+   }
+   return bean;
+}
+
+在需要使用 AOP 时，它会把创建的原始的 Bean 对象 wrap 成代理对象作为 Bean 返回：
+protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
+   // 省略非关键代码
+   Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
+   if (specificInterceptors != DO_NOT_PROXY) {
+      this.advisedBeans.put(cacheKey, Boolean.TRUE);
+      Object proxy = createProxy(
+            bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
+      this.proxyTypes.put(cacheKey, proxy.getClass());
+      return proxy;
+   }
+   // 省略非关键代码 
+}
+
+在需要使用 AOP 时，它会把创建的原始的 Bean 对象 wrap 成代理对象作为 Bean 返回。
+这里createProxy是关键：
+
+
+protected Object createProxy(Class<?> beanClass, @Nullable String beanName,
+   @Nullable Object[] specificInterceptors, TargetSource targetSource) {
+   // 省略非关键代码
+   ProxyFactory proxyFactory = new ProxyFactory();
+   if (!proxyFactory.isProxyTargetClass()) {
+      if (shouldProxyTargetClass(beanClass, beanName)) {
+         proxyFactory.setProxyTargetClass(true);
+      }
+      else {
+         evaluateProxyInterfaces(beanClass, proxyFactory);
+      }
+   }
+   Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
+   proxyFactory.addAdvisors(advisors);
+   proxyFactory.setTargetSource(targetSource);
+   customizeProxyFactory(proxyFactory);
+   // 省略非关键代码
+   return proxyFactory.getProxy(getProxyClassLoader());
+}
+
+我们从 Spring 中获取到的对象都是这个代理对象，所以具有 AOP 功能。
+直接使用 this 引用到的只是一个普通对象，自然也就没办法实现 AOP 的功能了：
+
+
+
+4. 案例：直接访问被拦截类的属性抛空指针异常
