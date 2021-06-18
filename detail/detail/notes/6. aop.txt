@@ -139,3 +139,120 @@ protected Object createProxy(Class<?> beanClass, @Nullable String beanName,
 
 
 4. 案例：直接访问被拦截类的属性抛空指针异常
+ElectricService第20行
+String payNum = adminUserService.adminUser.getPayNum();
+在加入切面AdminAspect后，出现了空指针异常。而AdminAspect正常执行，login也正常执行。
+
+1）正常情况下，AdminUserService 只是一个普通的对象，而 AOP 增强过的则是一个
+AdminUserService $$EnhancerBySpringCGLIB$$xxxx。这个类实际上是 AdminUserService 的一个子类。
+它会 overwrite 所有 public 和 protected 方法，并在内部将调用委托给原始的 AdminUserService 实例。
+
+2）从具体实现角度看，CGLIB 中 AOP 的实现是基于 org.springframework.cglib.proxy 包中  
+Enhancer 和 MethodInterceptor 两个接口来实现的，分为三个步骤：
+a. 定义自定义的 MethodInterceptor 负责委托方法执行；
+b. 创建 Enhancer 并设置 Callback 为上述 MethodInterceptor；
+c. enhancer.create() 创建代理。
+
+在得到 Advisors 之后，会通过 ProxyFactory.getProxy 获取代理对象:
+
+public Object getProxy(ClassLoader classLoader) {
+   return createAopProxy().getProxy(classLoader);
+}
+
+CGLIB为例：
+public Object getProxy(@Nullable ClassLoader classLoader) {
+   // 省略非关键代码
+   // 创建及配置 Enhancer
+   Enhancer enhancer = createEnhancer();
+   // 省略非关键代码
+   // 获取Callback：包含DynamicAdvisedInterceptor，亦是MethodInterceptor
+   Callback[] callbacks = getCallbacks(rootClass);
+   // 省略非关键代码
+   // 生成代理对象并创建代理（设置 enhancer 的 callback 值）
+   return createProxyClassAndInstance(enhancer, callbacks);
+   // 省略非关键代码
+}
+
+->createProxyClassAndInstance
+protected Object createProxyClassAndInstance(Enhancer enhancer, Callback[] callbacks) {
+   //创建代理类Class
+   Class<?> proxyClass = enhancer.createClass();
+   Object proxyInstance = null;
+   //spring.objenesis.ignore默认为false
+   //所以objenesis.isWorthTrying()一般为true
+   if (objenesis.isWorthTrying()) {
+      try {
+         // 创建实例
+         proxyInstance = objenesis.newInstance(proxyClass, enhancer.getUseCache());
+      }
+      catch (Throwable ex) {
+          // 省略非关键代码
+      }
+   }
+       
+    if (proxyInstance == null) {
+       // 尝试普通反射方式创建实例
+       try {
+          Constructor<?> ctor = (this.constructorArgs != null ?
+                proxyClass.getDeclaredConstructor(this.constructorArgTypes) :
+                proxyClass.getDeclaredConstructor());
+          ReflectionUtils.makeAccessible(ctor);
+          proxyInstance = (this.constructorArgs != null ?
+                ctor.newInstance(this.constructorArgs) : ctor.newInstance());
+      //省略非关键代码
+       }
+    }
+   // 省略非关键代码
+   ((Factory) proxyInstance).setCallbacks(callbacks);
+   return proxyInstance;
+}
+
+objenesis 方式最后使用了 JDK 的 ReflectionFactory.newConstructorForSerialization() 
+完成了代理对象的实例化。而如果你稍微研究下这个方法，你会惊讶地发现，
+这种方式创建出来的对象是不会初始化类成员变量的。
+
+反射实例化一个对象，第三种不会初始化类的成员变量。
+1） java.lang.Class.newInsance()
+2） java.lang.reflect.Constructor.newInstance()
+3） sun.reflect.ReflectionFactory.newConstructorForSerialization().newInstance()
+
+所以在加入切面后，AdminUserService中的成员变量并没有被初始化，自然就是null了。
+
+那么为什么 String payNum = adminUserService.getAdminUser().getPayNum();
+就可以正常执行？
+
+创建代理类后，我们会调用 setCallbacks 来设置拦截后需要注入的代码：
+
+protected Object createProxyClassAndInstance(Enhancer enhancer, Callback[] callbacks) {
+   Class<?> proxyClass = enhancer.createClass();
+   Object proxyInstance = null;
+   if (objenesis.isWorthTrying()) {
+      try {
+         proxyInstance = objenesis.newInstance(proxyClass, enhancer.getUseCache());
+      }
+   // 省略非关键代码
+   ((Factory) proxyInstance).setCallbacks(callbacks);
+   return proxyInstance;
+}
+上述的 callbacks 中会存在一种服务于 AOP 的 DynamicAdvisedInterceptor，
+它的接口是 MethodInterceptor（callback 的子接口），实现了拦截方法 intercept()：
+
+public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+   // 省略非关键代码
+    TargetSource targetSource = this.advised.getTargetSource();
+    // 省略非关键代码 
+      if (chain.isEmpty() && Modifier.isPublic(method.getModifiers())) {
+         Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
+         retVal = methodProxy.invoke(target, argsToUse);
+      }
+      else {
+         // We need to create a method invocation...
+         retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
+      }
+      retVal = processReturnType(proxy, target, method, retVal);
+      return retVal;
+   }
+   //省略非关键代码
+}
+当代理类方法被调用，会被 Spring 拦截，从而进入此 intercept()，并在此方法中获取被代理的原始对象。
+而在原始对象中，类属性是被实例化过且存在的。因此代理类是可以通过方法拦截获取被代理对象实例的属性。

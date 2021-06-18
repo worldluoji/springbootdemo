@@ -3,6 +3,7 @@ package com.example.detail;
 
 import com.beanissues.Case1Service;
 import com.beanissues.Case2Service;
+import com.example.detail.services.ElectricService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -23,6 +24,10 @@ public class DetailApplication implements ApplicationRunner {
 	private Case2Service case2;
 
 
+	@Autowired
+	private ElectricService electricService;
+
+
 	public static void main(String[] args) {
 		SpringApplication.run(DetailApplication.class, args);
 		// ConfigurableApplicationContext context = SpringApplication.run(DetailApplication.class, args);
@@ -33,6 +38,8 @@ public class DetailApplication implements ApplicationRunner {
 	public void run(ApplicationArguments args) throws Exception {
 		case1.say();
 		case2.say();
+		// electricService.pay();// 空指针
+		electricService.payNew();
 	}
 
 }
