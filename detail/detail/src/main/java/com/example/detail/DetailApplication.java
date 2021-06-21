@@ -1,12 +1,14 @@
 package com.example.detail;
 
 
+import com.aop.aspectj.simpleaopdemo.interfaces.ITraining;
 import com.beanissues.Case1Service;
 import com.beanissues.Case2Service;
 import com.example.detail.events.SimpleEvent;
 import com.example.detail.services.ElectricService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -29,6 +31,11 @@ public class DetailApplication implements ApplicationRunner {
 	@Autowired
 	private ElectricService electricService;
 
+
+	@Autowired
+	@Qualifier("simpleTraining")
+	private ITraining training;
+
 	@Autowired
 	private ApplicationContext applicationContext;
 
@@ -46,6 +53,7 @@ public class DetailApplication implements ApplicationRunner {
 		// electricService.pay();// 空指针
 		electricService.payNew();
 		applicationContext.publishEvent(new SimpleEvent("start finished"));
+		training.train();
 	}
 
 }

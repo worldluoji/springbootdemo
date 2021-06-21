@@ -19,15 +19,15 @@ public class TrainingAspect {
     }
 
     // 以下是四种通知
-//    @Before("doTrain()")
-//    public void before() {
-//        System.out.println("运动前要进行热身运动");
-//    }
-//
-//    @After("doTrain()")
-//    public void after() {
-//        System.out.println("运动后要补充水分并进行肌肉拉伸");
-//    }
+    @Before("doTrain()")
+    public void before() {
+       System.out.println("before train...");
+    }
+
+    @After("doTrain()")
+    public void after() {
+       System.out.println("after train...");
+    }
 
     // 环绕通知可以同时进行前置和后置通知，当然也可以再jp.proceed()执行前return中止后续操作
     @Around("doTrain()")
