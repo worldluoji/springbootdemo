@@ -424,3 +424,44 @@ public int compareTo(String anotherString) {
 
 答案揭晓：如果两个方法名长度相同，则依次比较每一个字母的 ASCII 码，ASCII 码越小，排序越靠前；
 若长度不同，且短的方法名字符串是长的子集时，短的排序靠前。
+
+6. @Order
+我们可以将“未达到执行顺序预期”的增强方法移动到一个独立的切面类
+而不同的切面类可以使用 @Order 进行修饰。
+@Order 的 value 值越低，则执行优先级越高。
+
+
+@Aspect
+@Service
+@Order(1)
+public class AopConfig1 {
+    @Before("execution(* com.spring.puzzle.class6.example2.ElectricService.charge()) ")
+    public void validateAuthority(JoinPoint pjp) throws Throwable {
+        throw new RuntimeException("authority check failed");
+    }
+}
+
+
+@Aspect
+@Service
+@Order(2)
+public class AopConfig2 {
+
+    @Before("execution(* com.spring.puzzle.class6.example2.ElectricService.charge())")
+    public void logBeforeMethod(JoinPoint pjp) throws Throwable {
+        System.out.println("step into ->"+pjp.getSignature());
+    }
+
+}
+
+具体原因sortAdvisors：
+
+protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
+   List<Advisor> candidateAdvisors = findCandidateAdvisors();
+   List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
+   extendAdvisors(eligibleAdvisors);
+   if (!eligibleAdvisors.isEmpty()) {
+      eligibleAdvisors = sortAdvisors(eligibleAdvisors);
+   }
+   return eligibleAdvisors;
+}
