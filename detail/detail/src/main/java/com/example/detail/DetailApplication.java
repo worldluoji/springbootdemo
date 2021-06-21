@@ -3,6 +3,7 @@ package com.example.detail;
 
 import com.beanissues.Case1Service;
 import com.beanissues.Case2Service;
+import com.example.detail.events.SimpleEvent;
 import com.example.detail.services.ElectricService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScans;
 
@@ -27,6 +29,9 @@ public class DetailApplication implements ApplicationRunner {
 	@Autowired
 	private ElectricService electricService;
 
+	@Autowired
+	private ApplicationContext applicationContext;
+
 
 	public static void main(String[] args) {
 		SpringApplication.run(DetailApplication.class, args);
@@ -40,6 +45,7 @@ public class DetailApplication implements ApplicationRunner {
 		case2.say();
 		// electricService.pay();// 空指针
 		electricService.payNew();
+		applicationContext.publishEvent(new SimpleEvent("start finished"));
 	}
 
 }

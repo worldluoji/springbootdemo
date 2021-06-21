@@ -1,4 +1,6 @@
-package com.example.springbootlistenerdemo;
+package com.example.detail.events.listeners;
+
+import com.example.detail.events.SimpleEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +14,7 @@ public class SimpleListener implements ApplicationListener<SimpleEvent> {
 
     @Override
     public void onApplicationEvent(SimpleEvent simpleEvent) {
-        logger.info("监听" + simpleEvent.getClass());
+        logger.info("listening " + simpleEvent.getClass());
         simpleEvent.doEvent();
     }
 }

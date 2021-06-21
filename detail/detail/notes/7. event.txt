@@ -1,0 +1,165 @@
+1. Spring事件的3个组件：
+1）事件（Event）：用来区分和定义不同的事件。
+   在 Spring 中，常见的如 ApplicationEvent 和 AutoConfigurationImportEvent，
+   它们都继承于 java.util.EventObject。
+2）事件广播器（Multicaster）：负责发布上述定义的事件。
+   例如，负责发布 ApplicationEvent 的 ApplicationEventMulticaster 就是 Spring 中一种常见的广播器。
+3）事件监听器（Listener）：负责监听和处理广播器发出的事件。
+   例如 ApplicationListener 就是用来处理 ApplicationEventMulticaster 发布的 ApplicationEvent，
+   它继承于 JDK 的 EventListener，我们可以看下它的定义来验证这个结论：
+
+public interface ApplicationListener<E extends ApplicationEvent> extends EventListener {
+    void onApplicationEvent(E event);
+}
+
+2. 案例1：MyContextStartedEventListener#监听ContextStartedEvent失败
+ContextStartedEvent事件的发布在：
+AbstractApplicationContext#start
+@Override
+public void start() {
+   getLifecycleProcessor().start();
+   publishEvent(new ContextStartedEvent(this));
+}
+
+而Spring启动时，
+public ConfigurableApplicationContext run(String... args) {
+    //省略非关键代码
+    context = createApplicationContext();
+    //省略非关键代码
+    prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+    refreshContext(context);
+    //省略非关键代码 
+    return context;
+}
+
+->
+
+protected void refresh(ApplicationContext applicationContext) {
+    Assert.isInstanceOf(AbstractApplicationContext.class, applicationContext);
+    ((AbstractApplicationContext) applicationContext).refresh();
+}
+
+Spring 启动最终调用的是 AbstractApplicationContext#refresh，
+并不是 AbstractApplicationContext#start。
+所以ContextStartedEvent 自然不会被抛出，不抛出，自然也不可能被捕获。
+所以，改为监听ContextRefreshedEvent即可。
+
+而 start() 是 org.springframework.context.Lifecycle 定义的方法，
+而它在 Spring Boot 的默认实现中是去执行所有 Lifecycle Bean 的启动方法，
+这点可以参考 DefaultLifecycleProcessor#startBeans
+
+
+private void startBeans(boolean autoStartupOnly) {
+    Map<String, Lifecycle> lifecycleBeans = getLifecycleBeans();
+    Map<Integer, LifecycleGroup> phases = new HashMap<>();
+    lifecycleBeans.forEach((beanName, bean) -> {
+       if (!autoStartupOnly || (bean instanceof SmartLifecycle && ((SmartLifecycle) bean).isAutoStartup())) {
+          int phase = getPhase(bean);
+          LifecycleGroup group = phases.get(phase);
+          if (group == null) {
+             group = new LifecycleGroup(phase, this.timeoutPerShutdownPhase, lifecycleBeans, autoStartupOnly);
+             phases.put(phase, group);
+          }
+          group.add(beanName, bean);
+       }
+    });
+    if (!phases.isEmpty()) {
+       List<Integer> keys = new ArrayList<>(phases.keySet());
+       Collections.sort(keys);
+       for (Integer key : keys) {
+          phases.get(key).start();
+       }
+    }
+ }
+
+而实现一个Lifecycle bean只需要实现Lifecycle接口，并且覆写对应的方法：
+@Component
+@Slf4j
+public class MyLifeCycle implements Lifecycle {
+
+    private volatile boolean running = false;
+
+    @Override
+    public void start() {
+       log.info("lifecycle start");
+       running = true;
+    }
+
+    @Override
+    public void stop() {
+       log.info("lifecycle stop");
+       running = false;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+}
+
+通过这个 Lifecycle Bean 的使用，AbstractApplicationContext 的 start 要做的事，我们就清楚多了。
+它和 Refresh() 不同，Refresh() 是初始化和加载所有需要管理的 Bean，
+而 start 只有在有 Lifecycle Bean 时才有被调用的价值。
+我们自定义 Lifecycle Bean 一般是用来做什么呢？例如，可以用它来实现运行中的启停，比如在启动时加载一些东东。
+
+
+3. 案例2：监听体系不一致
+MyApplicationEnvironmentPreparedEventListener监听ApplicationEnvironmentPreparedEvent无效
+
+这个事件在 Spring 中是由 EventPublishingRunListener#environmentPrepared 方法抛出：
+
+@Override
+public void environmentPrepared(ConfigurableEnvironment environment) {
+   this.initialMulticaster
+       .multicastEvent(new ApplicationEnvironmentPreparedEvent(this.application, this.args, environment));
+}
+
+你会发现这个方法在 Spring 启动时一定经由 SpringApplication#prepareEnvironment 方法调用
+
+我们会发现这个事件的监听器就存储在 SpringApplication#Listeners
+
+而这个事件的监听器是EventPublishingRunListener类中的initialMulticaster，监听器通过
+application.getListeners()获取：
+public class EventPublishingRunListener implements SpringApplicationRunListener, Ordered {
+    //省略非关键代码
+    private final SimpleApplicationEventMulticaster initialMulticaster;
+ 
+    public EventPublishingRunListener(SpringApplication application, String[] args) {
+       //省略非关键代码
+       this.initialMulticaster = new SimpleApplicationEventMulticaster();
+       for (ApplicationListener<?> listener : application.getListeners()) {
+          this.initialMulticaster.addApplicationListener(listener);
+       }
+    }
+}
+调试可以发现，application.getListeners()中，并没有我们定义的MyApplicationEnvironmentPreparedEventListener。
+
+实际，SpringBoot在启动时调用下面的方法获取上述ApplicationListener监听器：
+setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+最终找到是META-INF/spring.factories（classLoader.getResources(FACTORIES_RESOURCE_LOCATION)）
+我们定义的监听器并没有被放置在 META-INF/spring.factories 中，实际上，我们的监听器监听的体系是另外一套：
+广播器：即 AbstractApplicationContext#applicationEventMulticaster；
+监听器：由上述提及的 META-INF/spring.factories 中加载的监听器以及扫描到的 ApplicationListener 类型的 Bean 共同组成。
+
+解决方案：
+使用 META-INF/spring.factories，即在 /src/main/resources 下面新建目录 META-INF，
+然后新建一个对应的 spring.factories 文件：
+org.springframework.context.ApplicationListener=\
+com.spring.puzzle.listener.example2.MyApplicationEnvironmentPreparedEventListener
+
+补充：
+1）ApplicationStartingEvent
+springboot启动开始的时候执行的事件，在该事件中可以获取到SpringApplication对象，可做一些执行前的设置
+2）ApplicationEnvironmentPreparedEvent：SpringBoot对应Enviroment已经准备完毕，
+但此时上下文context还没有创建。在该监听中获取到ConfigurableEnvironment后可以对配置信息做操作，
+例如：修改默认的配置信息，增加额外的配置信息等等。
+3）ApplicationPreparedEvent
+ApplicationPreparedEvent:SpringBoot上下文context创建完成，但此时spring中的bean是没有完全加载完成的。
+在获取完上下文后，可以将上下文传递出去做一些额外的操作。
+值得注意的是：在该监听器中是无法获取自定义bean并进行操作的。
+4）ApplicationReadyEvent
+ApplicationReadyEvent：SpringBoot 加载完成时候执行的事件。
+5）ApplicationFailedEvent
+ApplicationFailedEvent:SpringBoot启动异常时执行事件，在异常发生时，
+最好是添加虚拟机对应的钩子进行资源的回收与释放，能友善的处理异常信息。
