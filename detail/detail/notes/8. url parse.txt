@@ -155,3 +155,94 @@ public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAn
 Spring默认都是必输的，所以一旦有非必输参数，可以用如下两种方式：
 @RequestParam(value = "address", defaultValue = "no address") String address)
 @RequestParam(value = "address", required = false) String address)
+
+4. 关于格式转化
+比如入参是一个Date
+UrlParseController#hi6
+http://localhost:8080/hi6?date=2021-5-1 20:26:53
+报错400
+"Failed to convert value of type 'java.lang.String' to required type 'java.util.Date"
+
+RequestParamMethodArgumentResolver#resolveName:
+@Nullable
+protected Object resolveName(String name, MethodParameter parameter, NativeWebRequest request) throws Exception {
+   //省略其他非关键代码
+   if (arg == null) {
+      String[] paramValues = request.getParameterValues(name);
+      if (paramValues != null) {
+         arg = (paramValues.length == 1 ? paramValues[0] : paramValues);
+      }
+   }
+   return arg;
+}
+很明显，给上层返回的是一个 String，这个 String 的值最终是需要做转化才能赋值给其他类型。
+AbstractNamedValueMethodArgumentResolver#resolveArgument：
+
+public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+    NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+ //省略其他非关键代码
+ Object arg = resolveName(resolvedName.toString(), nestedParameter, webRequest);
+ //以此为界，前面代码为解析请求参数,后续代码为转化解析出的参数
+ if (binderFactory != null) {
+    WebDataBinder binder = binderFactory.createBinder(webRequest, null, namedValueInfo.name);
+    try {
+       arg = binder.convertIfNecessary(arg, parameter.getParameterType(), parameter);
+    }
+    //省略其他非关键代码
+ }
+ //省略其他非关键代码
+ return arg;
+}
+
+需要根据源类型和目标类型寻找转化器来执行转化的。而对于 Date 型的 Date 变量，
+在本案例中，最终找到的是 ObjectToObjectConverter：
+
+public Object convert(@Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+    if (source == null) {
+       return null;
+    }
+    Class<?> sourceClass = sourceType.getType();
+    Class<?> targetClass = targetType.getType();
+    //根据源类型去获取构建出目标类型的方法：可以是工厂方法（例如 valueOf、from 方法）也可以是构造器
+    Member member = getValidatedMember(targetClass, sourceClass);
+    try {
+       if (member instanceof Method) {
+          //如果是工厂方法，通过反射创建目标实例
+       } else if (member instanceof Constructor) {
+          //如果是构造器，通过反射创建实例
+          Constructor<?> ctor = (Constructor<?>) member;
+          ReflectionUtils.makeAccessible(ctor);
+          return ctor.newInstance(source);
+       }
+    }
+    catch (InvocationTargetException ex) {
+       throw new ConversionFailedException(sourceType, targetType, source, ex.getTargetException());
+    }
+    catch (Throwable ex) {
+       throw new ConversionFailedException(sourceType, targetType, source, ex);
+    }
+}
+
+当使用 ObjectToObjectConverter 进行转化时，
+是根据反射机制带着源目标类型来查找可能的构造目标实例方法，
+例如构造器或者工厂方法，然后再次通过反射机制来创建一个目标对象。
+public Date(String s) {
+    this(parse(s));
+}
+我们传入的 2021-5-1 20:26:53 虽然确实是一种日期格式，但用来作为 Date 构造器参数是不支持的，
+最终报错，并被上层捕获，转化为 ConversionFailedException 异常。
+默认的格式是：
+http://localhost:8080/hi6?date=Sat, 12 Aug 1995 13:30:00 GMT
+
+
+我们可以使用更强大的 AnnotationParserConverter。
+在 Spring 初始化时，会构建一些针对日期型的转化器，
+即相应的一些 AnnotationParserConverter 的实例。
+AnnotationParserConverter#matches：
+@Override
+public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
+   return targetType.hasAnnotation(this.annotationType);
+}
+但是它要求我们标记 @DateTimeFormat。很明显，我们的参数 Date 并没有标记这个注解，
+所以这里为了使用这个转化器，我们可以使用上它并提供合适的格式：
+@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss") Date date
