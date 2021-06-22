@@ -129,3 +129,29 @@ private NamedValueInfo updateNamedValueInfo(MethodParameter parameter, NamedValu
  当参数名不存在，@RequestParam 也没有指明，自然就无法决定到底要用什么名称去获取请求参数。
  所以强烈建议显示指定参数名字。
  另外需要注意的是，本案例围绕的都是 @RequestParam，但 @PathVarible 也有一样的问题。
+
+3. RequestParamMethodArgumentResolver 对参数解析的一些关键操作
+ 
+public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+    NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+ NamedValueInfo namedValueInfo = getNamedValueInfo(parameter);
+ MethodParameter nestedParameter = parameter.nestedIfOptional();
+ //省略其他非关键代码
+ //获取请求参数
+ Object arg = resolveName(resolvedName.toString(), nestedParameter, webRequest);
+ if (arg == null) {
+    if (namedValueInfo.defaultValue != null) {
+       arg = resolveStringValue(namedValueInfo.defaultValue);
+    }
+    else if (namedValueInfo.required && !nestedParameter.isOptional()) {
+       handleMissingValue(namedValueInfo.name, nestedParameter, webRequest);
+    }
+    arg = handleNullValue(namedValueInfo.name, arg, nestedParameter.getNestedParameterType());
+ }
+ //省略后续代码：类型转化等工作
+ return arg;
+}
+
+Spring默认都是必输的，所以一旦有非必输参数，可以用如下两种方式：
+@RequestParam(value = "address", defaultValue = "no address") String address)
+@RequestParam(value = "address", required = false) String address)
