@@ -74,6 +74,58 @@ private String getMatchingPattern(String pattern, String lookupPath) {
        }
     }
     return null;
+}
+在 useTrailingSlashMatch 这个参数启用时（默认启用），会把 Pattern 结尾加上 / 再尝试匹配一次。
+如果能匹配上，在最终返回 Pattern 时就隐式自动加 /。
+
+
+2. Spring解析请求参数名称的过程
+例子：UrlParseController
+
+假设maven关闭了选项：
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+   <configuration>
+        <debug>false</debug>
+        <parameters>false</parameters>
+    </configuration>
+</plugin>
+这 2 个参数控制了一些 debug 信息是否加进 class 文件中。我们可以开启这两个参数来编译，
+然后使用下面的命令来查看信息：javap -verbose UrlParseController.class :
+Code:
+stack=1, locals=2, args_size=2
+   0: aload_1
+   1: areturn
+LineNumberTable:
+  line 11: 0
+LocalVariableTable:
+  Start  Length  Slot  Name   Signature
+      0       2     0  this   Lcom/example/detail/controllers/UrlParseController;
+      0       2     1  name   Ljava/lang/String;
+MethodParameters:
+Name                           Flags
+name
+这时候我们可以看到有name这个参数信息，而关闭上述两个maven参数后，就没有name参数信息了。
+这时候如果不显示指定，spring自然无法获取，就会报错。
+
+AbstractNamedValueMethodArgumentResolver#updateNamedValueInfo:
+ 
+private NamedValueInfo updateNamedValueInfo(MethodParameter parameter, NamedValueInfo info) {
+    String name = info.name;
+    if (info.name.isEmpty()) {
+       name = parameter.getParameterName();
+       if (name == null) {
+          throw new IllegalArgumentException(
+                "Name for argument type [" + parameter.getNestedParameterType().getName() +
+                "] not available, and parameter name information not found in class file either.");
+       }
+    }
+    String defaultValue = (ValueConstants.DEFAULT_NONE.equals(info.defaultValue) ? null : info.defaultValue);
+    return new NamedValueInfo(name, info.required, defaultValue);
  }
- 在 useTrailingSlashMatch 这个参数启用时（默认启用），会把 Pattern 结尾加上 / 再尝试匹配一次。
- 如果能匹配上，在最终返回 Pattern 时就隐式自动加 /。
+
+ 其中 NamedValueInfo 的 name 为 @RequestParam 指定的值。
+ 当参数名不存在，@RequestParam 也没有指明，自然就无法决定到底要用什么名称去获取请求参数。
+ 所以强烈建议显示指定参数名字。
+ 另外需要注意的是，本案例围绕的都是 @RequestParam，但 @PathVarible 也有一样的问题。
