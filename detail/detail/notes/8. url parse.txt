@@ -1,0 +1,79 @@
+1. url路径匹配
+结合PathVariableController
+AbstractHandlerMethodMapping#lookupHandlerMethod
+->
+@Nullable
+protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletRequest request) throws Exception {
+   List<Match> matches = new ArrayList<>();
+   // 尝试按照 URL 进行精准匹配
+   List<T> directPathMatches = this.mappingRegistry.getMappingsByUrl(lookupPath);
+   if (directPathMatches != null) {
+      // 精确匹配上，存储匹配结果
+      addMatchingMappings(directPathMatches, matches, request);
+   }
+   if (matches.isEmpty()) {
+      // 没有精确匹配上，尝试根据请求来进行模糊匹配
+      addMatchingMappings(this.mappingRegistry.getMappings().keySet(), matches, request);
+   }
+
+   if (!matches.isEmpty()) {
+      Comparator<Match> comparator = new MatchComparator(getMappingComparator(request));
+      matches.sort(comparator);
+      Match bestMatch = matches.get(0);
+      if (matches.size() > 1) {
+         //处理多个匹配的情况
+      }
+      //省略其他非关键代码
+      return bestMatch.handlerMethod;
+   } else {
+      //匹配不上，直接报错
+      return handleNoMatch(this.mappingRegistry.getMappings().keySet(), lookupPath, request);
+   }
+}
+
+对于@GetMapping(path = "/hello1/{name}")，
+http://localhost:8080/hi1/xiao/ming  无法精确匹配，
+于是进入了模糊匹配的分支->
+RequestMappingInfo#getMatchingCondition
+
+public RequestMappingInfo getMatchingCondition(HttpServletRequest request) {
+    RequestMethodsRequestCondition methods = this.methodsCondition.getMatchingCondition(request);
+    if (methods == null) {
+       return null;
+    }
+    ParamsRequestCondition params = this.paramsCondition.getMatchingCondition(request);
+    if (params == null) {
+       return null;
+    }
+    //省略其他匹配条件
+    PatternsRequestCondition patterns = this.patternsCondition.getMatchingCondition(request);
+    if (patterns == null) {
+       return null;
+    }
+    //省略其他匹配条件
+    return new RequestMappingInfo(this.name, patterns,
+          methods, params, headers, consumes, produces, custom.getCondition());
+ }
+
+匹配会查询所有的信息，例如 Header、Body 类型以及 URL 等。如果有一项不符合条件，则不匹配。
+当使用 http://localhost:8080/hi1/xiaoming 访问时，其中 patternsCondition 是可以匹配上的。
+实际的匹配方法执行是通过 AntPathMatcher#match 来执行,
+而http://localhost:8080/hi1/xiao/ming  无法匹配，因此报错。
+
+http://localhost:8080/hi1/xiaoming/ 为什么多一个"/"不会报错：
+
+private String getMatchingPattern(String pattern, String lookupPath) {
+    //省略其他非关键代码
+    if (this.pathMatcher.match(pattern, lookupPath)) {
+       return pattern;
+    }
+    //尝试加一个/来匹配
+    if (this.useTrailingSlashMatch) {
+       if (!pattern.endsWith("/") && this.pathMatcher.match(pattern + "/", lookupPath)) {
+          return pattern + "/";
+       }
+    }
+    return null;
+ }
+ 在 useTrailingSlashMatch 这个参数启用时（默认启用），会把 Pattern 结尾加上 / 再尝试匹配一次。
+ 如果能匹配上，在最终返回 Pattern 时就隐式自动加 /。
