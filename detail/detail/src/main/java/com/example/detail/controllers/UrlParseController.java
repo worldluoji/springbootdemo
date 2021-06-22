@@ -20,12 +20,12 @@ public class UrlParseController {
     };
 
     @GetMapping(path = "/p/hi6")
-    public String hi6(@RequestParam("Date") Date date){
+    public String hi6(@RequestParam("date") Date date){
         return "date is " + date ;
     };
 
     @GetMapping(path = "/p/hi7")
-    public String hi7(@RequestParam("Date") @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss") Date date){
+    public String hi7(@RequestParam("date") @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss") Date date){
         return "date is " + date ;
     };
 }
