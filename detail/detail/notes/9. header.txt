@@ -1,0 +1,238 @@
+1. 了解Header
+Header 是介于 URL 和 Body 之外的第二大重要组成，它提供了更多的信息以及围绕这些信息的相关能力，
+例如 Content-Type 指定了我们的请求或者响应的内容类型，便于我们去做解码。
+虽然 Spring 对于 Header 的解析，大体流程和 URL 相同，
+但是 Header 本身具有自己的特点。例如，Header 不像 URL 只能出现在请求中。
+所以，Header 处理相关的错误和 URL 又不尽相同。
+如果想提供更多的信息，Header 往往是不二之举。
+
+2. 对于一个多值的 Header，在实践中，通常有两种方式来实现
+1)一种是采用下面的方式：Key: value1,value2
+2)另外一种方式就是我们测试请求中的格式：
+Key:value1
+Key:value2
+
+示例：HeaderController
+对于方式 1，我们使用 Map 接口自然不成问题。
+如果使用的是方式 2，我们使用Map就不能拿到所有的值。想要拿到多个值，就要使用MultiValueMap。
+参数类型定义为 Map，所以使用的自然是 RequestHeaderMapMethodArgumentResolver
+-》resolveArgument
+
+@Override
+public Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+      NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+   Class<?> paramType = parameter.getParameterType();
+   if (MultiValueMap.class.isAssignableFrom(paramType)) {
+      MultiValueMap<String, String> result;
+      if (HttpHeaders.class.isAssignableFrom(paramType)) {
+         result = new HttpHeaders();
+      }
+      else {
+         result = new LinkedMultiValueMap<>();
+      }
+      for (Iterator<String> iterator = webRequest.getHeaderNames(); iterator.hasNext();) {
+         String headerName = iterator.next();
+         String[] headerValues = webRequest.getHeaderValues(headerName);
+         if (headerValues != null) {
+            for (String headerValue : headerValues) {
+               result.add(headerName, headerValue);
+            }
+         }
+      }
+      return result;
+   }
+   else {
+      Map<String, String> result = new LinkedHashMap<>();
+      for (Iterator<String> iterator = webRequest.getHeaderNames(); iterator.hasNext();) {
+         String headerName = iterator.next();
+         //只取了一个“值”
+         String headerValue = webRequest.getHeader(headerName);
+         if (headerValue != null) {
+            result.put(headerName, headerValue);
+         }
+      }
+      return result;
+   }
+}
+
+我们可以从源码中看到，当为Map时，只取一个值；而为MultiValueMap，会保存多个值。
+我们还可以看到HttpHeaders这个东东，通过查看源码：
+public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
+它是MultiValueMap的一个实现类，更推荐使用。
+
+3. Content-Type设置失败
+在HeaderController#hi5中，
+设置了返回的Contet-Type为json，实际却是：
+HTTP/1.1 200
+myheader: myheadervalue
+Content-Type: text/html;charset=UTF-8
+Content-Length: 2
+Date: Wed, 23 Jun 2021 01:47:07 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
+
+以内嵌Tomcat为例：
+org.apache.catalina.connector.Response#addHeader
+
+private void addHeader(String name, String value, Charset charset) {
+    if (name != null && name.length() != 0 && value != null) {
+       if (!this.isCommitted()) {
+          if (!this.included) {
+             char cc = name.charAt(0);
+             if (cc != 'C' && cc != 'c' || !this.checkSpecialHeader(name, value)) {
+                this.getCoyoteResponse().addHeader(name, value, charset);
+             }
+          }
+       }
+    }
+ }
+
+ ->
+ private boolean checkSpecialHeader(String name, String value) {
+    if (name.equalsIgnoreCase("Content-Type")) {
+       this.setContentType(value);
+       return true;
+    } else {
+       return false;
+    }
+ }
+
+Headers里并没有Content-Type,而我们设置的Content-Type已经作为coyoteResponse成员的值了.
+当然也不意味着后面一定不会返回，我们可以继续跟踪后续执行,
+在案例代码返回 ok 后，我们需要对返回结果进行处理，
+执行方法为 RequestResponseBodyMethodProcessor#handleReturnValue:
+
+@Override
+public void handleReturnValue(@Nullable Object returnValue, MethodParameter returnType,
+      ModelAndViewContainer mavContainer, NativeWebRequest webRequest)
+      throws IOException, HttpMediaTypeNotAcceptableException, HttpMessageNotWritableException {
+
+   mavContainer.setRequestHandled(true);
+   ServletServerHttpRequest inputMessage = createInputMessage(webRequest);
+   ServletServerHttpResponse outputMessage = createOutputMessage(webRequest);
+
+   //对返回值(案例中为“ok”)根据返回类型做编码转化处理
+   writeWithMessageConverters(returnValue, returnType, inputMessage, outputMessage);
+}
+
+writeWithMessageConverters 会根据返回值及类型做转化，同时也会做一些额外的事情:
+1) 选择Media-Type
+
+//决策返回值是何种 MediaType    
+MediaType selectedMediaType = null;
+MediaType contentType = outputMessage.getHeaders().getContentType();
+boolean isContentTypePreset = contentType != null && contentType.isConcrete();
+//如果 header 中有 contentType，则用其作为选择的 selectedMediaType。
+if (isContentTypePreset) {
+   selectedMediaType = contentType;
+}
+//没有，则根据“Accept”头、返回值等核算用哪一种
+else {
+   HttpServletRequest request = inputMessage.getServletRequest();
+   List<MediaType> acceptableTypes = getAcceptableMediaTypes(request);
+   List<MediaType> producibleTypes = getProducibleMediaTypes(request, valueType, targetType);
+   //省略其他非关键代码 
+   List<MediaType> mediaTypesToUse = new ArrayList<>();
+   for (MediaType requestedType : acceptableTypes) {
+      for (MediaType producibleType : producibleTypes) {
+         if (requestedType.isCompatibleWith(producibleType)) {
+            mediaTypesToUse.add(getMostSpecificMediaType(requestedType, producibleType));
+         }
+      }
+   }
+   //省略其他关键代码 
+   for (MediaType mediaType : mediaTypesToUse) {
+      if (mediaType.isConcrete()) {
+         selectedMediaType = mediaType;
+         break;
+      }
+     //省略其他关键代码 
+   }
+
+根据是否具有 Content-Type 头来决定返回的 MediaType，通过前面的分析它是一种特殊的 Header，
+在 Controller 层并没有被添加到 Header 中去，所以在这里只能根据返回的类型、
+请求的 Accept 等信息协商出最终用哪种 MediaType。
+
+有选择 JSON 是因为在都支持的情况下，TEXT_PLAIN 默认优先级更高，
+参考代码 WebMvcConfigurationSupport#addDefaultHttpMessageConverters 
+可以看出转化器是有优先顺序的，所以用上述代码中的 getProducibleMediaTypes() 
+遍历 Converter 来收集可用 MediaType 也是有顺序的。
+
+2） 选择消息转化器并完成转化
+
+
+for (HttpMessageConverter<?> converter : this.messageConverters) {
+    GenericHttpMessageConverter genericConverter = (converter instanceof GenericHttpMessageConverter ?
+          (GenericHttpMessageConverter<?>) converter : null);
+    if (genericConverter != null ?
+          ((GenericHttpMessageConverter) converter).canWrite(targetType, valueType, selectedMediaType) :
+          converter.canWrite(valueType, selectedMediaType)) {
+       //省略其他非关键代码
+       if (body != null) {
+         //省略其他非关键代码
+          if (genericConverter != null) {
+             genericConverter.write(body, targetType, selectedMediaType, outputMessage);
+          }
+          else {
+             ((HttpMessageConverter) converter).write(body, selectedMediaType, outputMessage);
+          }
+       }
+       //省略其他非关键代码
+    }
+}
+
+->AbstractHttpMessageConverter#addDefaultHeaders
+
+protected void addDefaultHeaders(HttpHeaders headers, T t, @Nullable MediaType contentType) throws IOException {
+    if (headers.getContentType() == null) {
+       MediaType contentTypeToUse = contentType;
+       if (contentType == null || contentType.isWildcardType() || contentType.isWildcardSubtype()) {
+          contentTypeToUse = getDefaultContentType(t);
+       }
+       else if (MediaType.APPLICATION_OCTET_STREAM.equals(contentType)) {
+          MediaType mediaType = getDefaultContentType(t);
+          contentTypeToUse = (mediaType != null ? mediaType : contentTypeToUse);
+       }
+       if (contentTypeToUse != null) {
+          if (contentTypeToUse.getCharset() == null) {
+             //尝试添加字符集
+             Charset defaultCharset = getDefaultCharset();
+             if (defaultCharset != null) {
+                contentTypeToUse = new MediaType(contentTypeToUse, defaultCharset);
+             }
+          }
+          headers.setContentType(contentTypeToUse);
+       }
+    }
+    //省略其他非关键代码
+ }
+
+我们使用的是 MediaType#TEXT_PLAIN 作为 Content-Type 的 Header，
+毕竟之前我们添加 Content-Type 这个 Header 并没有成功。
+最终运行结果也就不出意外了，即"Content-Type: text/plain;charset=UTF-8"。
+
+在 Spring Boot 基于内嵌 Tomcat 开发时并不一定能设置成功，
+最终返回的 Content-Type 是根据实际的返回值及类型等多个因素来决定的。
+
+修复方法：
+1) 修改请求中的 Accept 头，约束返回类型
+GET http://localhost:8080/h/hi5
+Accept:application/json
+即带上 Accept 头，这样服务器在最终决定 MediaType 时，会选择 Accept 的值。
+具体执行可参考方法 AbstractMessageConverterMethodProcessor#getAcceptableMediaTypes
+
+2) 标记返回类型
+@RequestMapping(path = "/h/hi6", method = RequestMethod.GET, produces = {"application/json"})
+即使用 produces 属性来指明即可。这样的方式影响的是可以返回的 Media 类型，一旦设置，
+下面的方法就可以只返回一个指明的类型了。
+参考 AbstractMessageConverterMethodProcessor#getProducibleMediaTypes:
+
+protected List<MediaType> getProducibleMediaTypes(
+    HttpServletRequest request, Class<?> valueClass, @Nullable Type targetType) {
+ Set<MediaType> mediaTypes =
+       (Set<MediaType>) request.getAttribute(HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE);
+ if (!CollectionUtils.isEmpty(mediaTypes)) {
+    return new ArrayList<>(mediaTypes);
+ }
+ //省略其他非关键代码
+}
