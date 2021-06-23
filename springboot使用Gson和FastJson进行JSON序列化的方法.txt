@@ -1,0 +1,258 @@
+一. 我们先看看如何在Spring Boot中使用Google Gson。Gson是一个开源Java库，用于将Java对象序列化和反序列化为JSON。
+
+Spring Boot使用Jackson作为默认库，将Java对象序列化和反序列化为JSON。如果 在应用程序中添加“ spring-boot-starter ” ，它将包含在您的类路径中。这很棒，但有时您可能希望使用其他API，而不是Spring Boot自动配置中可用的API 。在本文中，我们将介绍使用Gson和Spring Boot的步骤。
+
+Spring Boot是一个具有某些默认值的智能系统，它具有Gson的自动配置功能。一旦发现Gson在类路径上，Spring Boot将自动配置Gson bean。它还在application.properties文件中提供了几个Gson特定属性。
+
+1. Maven依赖
+我们配置的第一步是在我们的pom.xml文件中添加Gson依赖项。这就是我们的pom.xml文件的样子：
+
+<dependency>
+  <groupId>com.google.code.gson</groupId>
+  <artifactId>gson</artifactId>
+  <version>2.8.5</version> <!-- check latest version for GSON -->
+</dependency>
+通过上面的配置，Spring Boo创建了一个具有合理默认值的Gson bean。Spring提供了一个GsonHttpMessageConverter ，它可以使用Google Gson库读写JSON。
+
+1.1使用Gson作为默认Mapper
+
+我们将Gson包含在类路径中，但我们需要使用application.properties文件将Gson设置为首选映射器。
+
+spring.http.converters.preferred-json-mapper=gson #Preferred JSON mapper to use for HTTP message conversion.
+如果您没有设置首选的json映射器，您可能会碰到
+
+org.springframework.http.converter.HttpMessageNotWritableException.
+
+
+1.2 Gson配置
+
+Spring Boot为Gson配置提供了几个属性。这是列表参考：
+
+# 序列化日期对象时使用的格式。
+spring.gson.date-format=
+
+# 是否禁用HTML字符转义，如“<”、“>”等。
+spring.gson.disable-html-escaping= 
+
+# 是否在序列化期间排除内部类。
+spring.gson.disable-inner-class-serialization= 
+
+# 是否启用复杂映射键（即非原语）的序列化。
+spring.gson.enable-complex-map-key-serialization=
+
+# 是否排除所有没有“expose”注释的字段进行序列化或反序列化。
+spring.gson.exclude-fields-without-expose-annotation= 
+
+# 在序列化和反序列化期间应用于对象字段的命名策略。
+spring.gson.field-naming-policy= 
+
+# 是否通过在输出前添加一些特殊文本来生成不可执行的JSON。
+spring.gson.generate-non-executable-json= 
+
+# 对于解析不符合RFC 4627的JSON是否宽容。
+spring.gson.lenient= 
+
+# 长类型和长类型的序列化策略。
+spring.gson.long-serialization-policy= 
+
+# 是否输出适合漂亮打印页面的序列化JSON。
+spring.gson.pretty-printing=
+
+# 是否序列化空字段。
+spring.gson.serialize-nulls=
+
+
+2.排除Jackson的依赖
+如果您将Gson用作默认库，请从类路径中删除Jackson。有两种方法可以将它从类路径中排除
+
+2.1使用Maven
+
+最简单的方法是使用您的排除标记pom.xml。Spring Boot将Jackson添加为Web启动器的一部分，我们所需要的只是将其排除在Web启动器中。
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+        <!-- Exclude the default Jackson dependency -->
+        <exclusions>
+            <exclusion>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-json</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+    <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.8.5</version>
+    </dependency>
+</dependencies>
+
+
+2.1使用Exclude属性
+
+第二种方法是使用带有@EnableAutoConfiguration或 @SpringBootApplication 的exclude属性
+
+@SpringBootApplication(exclude = {JacksonAutoConfiguration.class})
+public class GsonSpringBootApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(GsonSpringBootApplication.class, args);
+    }
+}
+
+
+使用此选项，您可以跳过设置， spring.http.converters.preferred-json-mapper因为Spring Boot只配置一个映射器
+
+3.使用HttpMessageConverters自定义
+要在Spring Boot应用程序中自定义Gson映射器的行为，您可以扩展 WebMvcConfigurerAdapter 以获取带有Spring的Http消息转换器。我们将举例说明我们要为JSON转换器自定义日期格式。
+
+@Configuration
+public class ApplicationConfig extends WebMvcConfigurerAdapter {
+
+    @Override
+    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        converters.add(customGsonHttpMessageConverter());
+        super.configureMessageConverters(converters);
+    }
+
+    private GsonHttpMessageConverter customGsonHttpMessageConverter() {
+        Gson gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation()
+                .setDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ss'")
+                .create();
+
+        GsonHttpMessageConverter gsonMessageConverter = new GsonHttpMessageConverter();
+        gsonMessageConverter.setGson(gson);
+
+        return gsonMessageConverter;
+    }
+}
+
+也可以用@Bean将GsonHttpMessageConverter被spring容器管理。 
+
+4.单元测试
+让我们设置一个小单元测试用例来测试Gson转换器。
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class GsonSpringBootApplicationTests {
+
+    private Product product;
+
+    @Before
+    public void setup(){
+        product =new  Product("123","Demo Product",123);
+    }
+
+    @Test
+    public void simpleGsonTest() throws JSONException {
+        String expected = "{\n" +
+                "\"code\": \蕋\",\n" +
+                "\"name\": \"Demo Product\",\n" +
+                "\"price\": 123\n" +
+                "}";
+
+        Gson gson = new GsonBuilder().create();
+        String data= gson.toJson(product);
+
+        JSONAssert.assertEquals(expected,data,false);
+    }
+
+    @Test
+    public void errorGsonTest() throws JSONException {
+        String expected = "{\n" +
+                "\"code\": \ \",\n" +
+                "\"name\": \"Demo Product\",\n" +
+                "\"price\": 123\n" +
+                "}";
+
+        Gson gson = new GsonBuilder().create();
+        String data= gson.toJson(product);
+
+        JSONAssert.assertEquals(expected,data,false);
+    }
+}
+
+5. 还可以自定义类型转换器：
+   @Bean
+    public HttpMessageConverters httpMessageConverters(JsonSerializer<Date> jsonSerializer,
+                                                       JsonDeserializer<Date> jsonDeserializer) {
+        GsonHttpMessageConverter gsonHttpMessageConverter = new GsonHttpMessageConverter();
+        Gson gson = new GsonBuilder()
+                 // 这里放入刚刚定义的规则
+                .registerTypeAdapter(Date.class, jsonSerializer)
+                .registerTypeAdapter(Date.class, jsonDeserializer)
+                .create();
+        gsonHttpMessageConverter.setGson(gson);
+        HttpMessageConverter<?> converter = gsonHttpMessageConverter;
+        return new HttpMessageConverters(converter);
+    }
+
+
+   @Bean
+    public JsonSerializer<Date> jsonSerializer() {
+        JsonSerializer<Date> dateJsonSerializer = (o, type, jsonSerializationContext) -> {
+            String format = DateFormatUtils.format(o, DATE_FORMAT);
+            return new JsonPrimitive(format);
+        };
+        return dateJsonSerializer;
+    }
+ 
+    @Bean
+    public JsonDeserializer<Date> jsonDeserializer() {
+        JsonDeserializer<Date> jsonDeserializer = (jsonElement, type, jsonDeserializationContext) -> {
+            String dateStr = jsonElement.getAsString();
+            try {
+                return DateUtils.parseDate(dateStr, DATE_FORMAT);
+            } catch (ParseException e) {
+                return new Date();
+            }
+        };
+        return jsonDeserializer;
+   }
+
+二. SpringBoot中使用FastJson的方法与Gson大同小异
+1. 引入fastjson依赖，并排除jackson依赖
+<dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <exclusions>
+          <exclusion>
+              <groupId>com.fasterxml.jackson.core</groupId>
+              <artifactId>jackson-databind</artifactId>
+          </exclusion>
+      </exclusions>
+</dependency>
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>fastjson</artifactId>
+    <version>1.2.57</version>
+ </dependency>
+
+2.  配置FastJson的Bean
+@Configuration
+public class MyFastJsonConfig {
+
+    @Bean
+    public FastJsonHttpMessageConverter fastJsonHttpMessageConverter(){
+        FastJsonHttpMessageConverter converter = new FastJsonHttpMessageConverter();
+        FastJsonConfig config = new FastJsonConfig();
+        config.setDateFormat("yyyy-MM-dd");
+        config.setCharset(Charset.forName("UTF-8"));
+        config.setSerializerFeatures(
+                //输出类名
+                SerializerFeature.WriteClassName,
+                //输出map中value为null的数据
+                SerializerFeature.WriteMapNullValue,
+                //json格式化
+                SerializerFeature.PrettyFormat,
+                //输出空list为[]，而不是null
+                SerializerFeature.WriteNullListAsEmpty,
+                //输出空string为""，而不是null
+                SerializerFeature.WriteNullStringAsEmpty
+        );
+        converter.setFastJsonConfig(config);
+        return converter;
+    }
+}
