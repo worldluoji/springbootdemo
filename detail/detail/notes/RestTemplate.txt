@@ -1,0 +1,176 @@
+1. 示例1：使用map作为参数报500 -> RestTemplateController#rest1
+RestTemplate.HttpEntityRequestCallback#doWithRequest
+
+public void doWithRequest(ClientHttpRequest httpRequest) throws IOException {
+    super.doWithRequest(httpRequest);
+    Object requestBody = this.requestEntity.getBody();
+    if (requestBody == null) {
+        //省略其他非关键代码
+    }
+    else {
+       Class<?> requestBodyClass = requestBody.getClass();
+       Type requestBodyType = (this.requestEntity instanceof RequestEntity ?
+             ((RequestEntity<?>)this.requestEntity).getType() : requestBodyClass);
+       HttpHeaders httpHeaders = httpRequest.getHeaders();
+       HttpHeaders requestHeaders = this.requestEntity.getHeaders();
+       MediaType requestContentType = requestHeaders.getContentType();
+       for (HttpMessageConverter<?> messageConverter : getMessageConverters()) {
+          if (messageConverter instanceof GenericHttpMessageConverter) {
+             GenericHttpMessageConverter<Object> genericConverter =
+                   (GenericHttpMessageConverter<Object>) messageConverter;
+             if (genericConverter.canWrite(requestBodyType, requestBodyClass, requestContentType)) {
+                if (!requestHeaders.isEmpty()) {
+                   requestHeaders.forEach((key, values) -> httpHeaders.put(key, new LinkedList<>(values)));
+                }
+                logBody(requestBody, requestContentType, genericConverter);
+                genericConverter.write(requestBody, requestBodyType, requestContentType, httpRequest);
+                return;
+             }
+          } else if (messageConverter.canWrite(requestBodyClass, requestContentType)) {
+             if (!requestHeaders.isEmpty()) {
+                requestHeaders.forEach((key, values) -> httpHeaders.put(key, new LinkedList<>(values)));
+             }
+             logBody(requestBody, requestContentType, messageConverter);
+             ((HttpMessageConverter<Object>) messageConverter).write(
+                   requestBody, requestContentType, httpRequest);
+             return;
+          }
+       }
+       String message = "No HttpMessageConverter for " + requestBodyClass.getName();
+       if (requestContentType != null) {
+          message += " and content type \"" + requestContentType + "\"";
+       }
+       throw new RestClientException(message);
+    }
+}
+
+根据当前要提交的 Body 内容，遍历当前支持的所有编解码器，如果找到合适的编解码器，
+就使用它来完成 Body 的转化。
+
+而map可以被JSON序列化，因此满足条件：
+-> AbstractJackson2HttpMessageConverter#canWrite
+public boolean canWrite(Class<?> clazz, @Nullable MediaType mediaType) {
+    if (!this.canWrite(mediaType)) {
+       return false;
+    } else {
+       if (mediaType != null && mediaType.getCharset() != null) {
+          Charset charset = mediaType.getCharset();
+          if (!ENCODINGS.containsKey(charset.name())) {
+             return false;
+          }
+       }
+
+       ObjectMapper objectMapper = this.selectObjectMapper(clazz, mediaType);
+       if (objectMapper == null) {
+          return false;
+       } else {
+          AtomicReference<Throwable> causeRef = new AtomicReference();
+          if (objectMapper.canSerialize(clazz, causeRef)) {
+             return true;
+          } else {
+             this.logWarningIfNecessary(clazz, (Throwable)causeRef.get());
+             return false;
+          }
+       }
+    }
+}
+
+那么为什么适应表单处理的编码器就不行：
+->FormHttpMessageConverter#canWrite
+public boolean canWrite(Class<?> clazz, @Nullable MediaType mediaType) {
+    if (!MultiValueMap.class.isAssignableFrom(clazz)) {
+       return false;
+    }
+    if (mediaType == null || MediaType.ALL.equals(mediaType)) {
+       return true;
+    }
+    for (MediaType supportedMediaType : getSupportedMediaTypes()) {
+       if (supportedMediaType.isCompatibleWith(mediaType)) {
+          return true;
+       }
+    }
+    return false;
+}
+实际，官方文档有这么一句话：
+The body of the entity, or request itself, 
+can be a MultiValueMap to create a multipart request. 
+The values in the MultiValueMap can be any Object representing the body of the part,
+or an HttpEntity.
+
+2. 示例2：请求url中带有特殊字符-> RestTemplateController#rest3
+url中有特殊字符，输出结果helloworld:1，#2被丢了
+本案例中涉及到的两个关键元素解释如下：
+1）Query（查询参数）页面加载请求数据时需要的参数，用 & 符号隔开，每个参数的名和值用 = 符号隔开。
+2）Fragment（锚点）# 开始，字符串，用于指定网络资源中的片断。
+例如一个网页中有多个名词解释，可使用 Fragment 直接定位到某一名词的解释。
+
+解析 URL 的关键点在于 UriComponentsBuilder#fromUriStrin：
+
+private static final Pattern URI_PATTERN = Pattern.compile(
+    "^(" + SCHEME_PATTERN + ")?" + "(//(" + USERINFO_PATTERN + "@)?" + HOST_PATTERN + "(:" + PORT_PATTERN +
+          ")?" + ")?" + PATH_PATTERN + "(\\?" + QUERY_PATTERN + ")?" + "(#" + LAST_PATTERN + ")?");
+          
+public static UriComponentsBuilder fromUriString(String uri) {
+ Matcher matcher = URI_PATTERN.matcher(uri);
+ if (matcher.matches()) {
+    UriComponentsBuilder builder = new UriComponentsBuilder();
+    String scheme = matcher.group(2);
+    String userInfo = matcher.group(5);
+    String host = matcher.group(6);
+    String port = matcher.group(8);
+    String path = matcher.group(9);
+    String query = matcher.group(11);
+    String fragment = matcher.group(13);
+    //省略非关键代码
+    else {
+       builder.userInfo(userInfo);
+       builder.host(host);
+       if (StringUtils.hasLength(port)) {
+          builder.port(port);
+       }
+       builder.path(path);
+       builder.query(query);
+    }
+    if (StringUtils.hasText(fragment)) {
+       builder.fragment(fragment);
+    }
+    return builder;
+ }
+ else {
+    throw new IllegalArgumentException("[" + uri + "] is not a valid URI");
+ }
+}
+
+Query 和 Fragment 都有所处理。最终它们根据 URI_PATTERN 各自找到了相应的值 (1 和 2)
+rest4中，高版本spring-web-5.3.6,使用fromHttpUrl,仍然解析了fragment：
+public static UriComponentsBuilder fromHttpUrl(String httpUrl) {
+    Assert.notNull(httpUrl, "HTTP URL must not be null");
+    Matcher matcher = HTTP_URL_PATTERN.matcher(httpUrl);
+    if (matcher.matches()) {
+       UriComponentsBuilder builder = new UriComponentsBuilder();
+       String scheme = matcher.group(1);
+       builder.scheme(scheme != null ? scheme.toLowerCase() : null);
+       builder.userInfo(matcher.group(4));
+       String host = matcher.group(5);
+       if (StringUtils.hasLength(scheme) && !StringUtils.hasLength(host)) {
+          throw new IllegalArgumentException("[" + httpUrl + "] is not a valid HTTP URL");
+       } else {
+          builder.host(host);
+          String port = matcher.group(7);
+          if (StringUtils.hasLength(port)) {
+             builder.port(port);
+          }
+
+          builder.path(matcher.group(8));
+          builder.query(matcher.group(10));
+          String fragment = matcher.group(12);
+          if (StringUtils.hasText(fragment)) {
+             builder.fragment(fragment);
+          }
+
+          return builder;
+       }
+    } else {
+       throw new IllegalArgumentException("[" + httpUrl + "] is not a valid HTTP URL");
+    }
+}
