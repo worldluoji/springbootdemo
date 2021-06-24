@@ -1,0 +1,95 @@
+问题：400 Required request body is missing
+加入ReadBodyFilter后导致，RequestBodyController#getUserLevel发生了错误，
+为什么？
+查看RequestBody转化的相关代码：
+RequestResponseBodyMethodProcessor#readWithMessageConverters：
+
+protected <T> Object readWithMessageConverters(NativeWebRequest webRequest, MethodParameter parameter,
+    Type paramType) throws IOException, HttpMediaTypeNotSupportedException, HttpMessageNotReadableException {
+ HttpServletRequest servletRequest = webRequest.getNativeRequest(HttpServletRequest.class);
+ ServletServerHttpRequest inputMessage = new ServletServerHttpRequest(servletRequest);
+ //读取 Body 并进行转化
+ Object arg = readWithMessageConverters(inputMessage, parameter, paramType);
+ if (arg == null && checkRequired(parameter)) {
+    throw new HttpMessageNotReadableException("Required request body is missing: " +
+          parameter.getExecutable().toGenericString(), inputMessage);
+ }
+ return arg;
+}
+protected boolean checkRequired(MethodParameter parameter) {
+ RequestBody requestBody = parameter.getParameterAnnotation(RequestBody.class);
+ return (requestBody != null && requestBody.required() && !parameter.isOptional());
+}
+
+从源码可以看到readWithMessageConverters返回为null并且checkRequired返回true时，则会抛出
+该错误。而checkRequired为true的条件是存在RequestBody注解，
+并且RequestBody注解的required参数为ture（required默认值就是true），
+并且parameter中isOptional为false.
+
+那么为什么readWithMessageConverters返回null呢？
+protected <T> Object readWithMessageConverters(HttpInputMessage inputMessage, MethodParameter parameter,
+    Type targetType){
+ //省略非关键代码
+ Object body = NO_VALUE;
+ EmptyBodyCheckingHttpInputMessage message;
+ try {
+    message = new EmptyBodyCheckingHttpInputMessage(inputMessage);
+    for (HttpMessageConverter<?> converter : this.messageConverters) {
+       Class<HttpMessageConverter<?>> converterType = (Class<HttpMessageConverter<?>>) converter.getClass();
+       GenericHttpMessageConverter<?> genericConverter =
+             (converter instanceof GenericHttpMessageConverter ? (GenericHttpMessageConverter<?>) converter : null);
+       if (genericConverter != null ? genericConverter.canRead(targetType, contextClass, contentType) :
+             (targetClass != null && converter.canRead(targetClass, contentType))) {
+          if (message.hasBody()) {
+             //省略非关键代码：读取并转化 body
+          else {
+             //处理没有 body 情况，默认返回 null
+             body = getAdvice().handleEmptyBody(null, message, parameter, targetType, converterType);
+          }
+          break;
+       }
+    }
+ }
+ catch (IOException ex) {
+    throw new HttpMessageNotReadableException("I/O error while reading input message", ex, inputMessage);
+ }
+ //省略非关键代码
+ return body;
+}
+
+当 message 没有 body 时（ message.hasBody() 为 false ），
+则将 body 认为是 null。继续查看 message 本身的定义，
+它是一种包装了请求 Header 和 Body 流的 EmptyBodyCheckingHttpInputMessage 类型：
+
+public EmptyBodyCheckingHttpInputMessage(HttpInputMessage inputMessage) throws IOException {
+    this.headers = inputMessage.getHeaders();
+    InputStream inputStream = inputMessage.getBody();
+    if (inputStream.markSupported()) {
+       //省略其他非关键代码
+    } else {
+       PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream);
+       int b = pushbackInputStream.read();
+       if (b == -1) {
+          this.body = null;
+       } else {
+          this.body = pushbackInputStream;
+          pushbackInputStream.unread(b);
+       }
+    }
+ }
+ public InputStream getBody() {
+    return (this.body != null ? this.body : StreamUtils.emptyInput());
+ }
+ 
+Body 为空的判断是由 pushbackInputStream.read() 其值为 -1 来判断出的，即没有数据可以读取。
+看到这里，你可能会有疑问：假设有 Body，read() 的执行不就把数据读取走了一点么？
+确实如此，所以这里我使用了 pushbackInputStream.unread(b)  调用来把读取出来的数据归还回去，
+这样就完成了是否有 Body 的判断，又保证了 Body 的完整性。
+
+问题原因就明白了：在过滤器ReadBodyFilter中，我们就已经将 Body 读取完了，等到框架真正需要
+读取的时候，就已经读不到了。
+
+解决方案：
+不要在过滤器总去读RequestBody数据，而是在RequestBodyAdviceAdapter中进行相关处理。
+参考PrintRequestBodyAdviceAdapter, 覆写supports方法和afterBodyRead方法。
+方法 afterBodyRead 的命名，很明显，这里的 Body 已经是从数据流中转化过的。
