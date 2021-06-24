@@ -1,0 +1,240 @@
+1. 当一个请求来临时，都会进入 DispatcherServlet，执行其 doDispatch()，
+此方法会根据 Path、Method 等关键信息定位到负责处理的 Controller 层方法（即 addStudent 方法），
+然后通过反射去执行这个方法，具体反射执行过程参考下面的代码:
+->InvocableHandlerMethod#invokeForRequest
+public Object invokeForRequest(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,
+    Object... providedArgs) throws Exception {
+ //根据请求内容和方法定义获取方法参数实例
+ Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
+ if (logger.isTraceEnabled()) {
+    logger.trace("Arguments: " + Arrays.toString(args));
+ }
+ //携带方法参数实例去“反射”调用方法
+ return doInvoke(args);
+}
+
+->HandlerMethodArgumentResolverComposite#getArgumentResolve
+
+@Nullable
+private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parameter) {
+   HandlerMethodArgumentResolver result = this.argumentResolverCache.get(parameter);
+   if (result == null) {
+      //轮询所有的HandlerMethodArgumentResolver
+      for (HandlerMethodArgumentResolver resolver : this.argumentResolvers) {
+         //判断是否匹配当前HandlerMethodArgumentResolver 
+         if (resolver.supportsParameter(parameter)) {
+            result = resolver;            
+            this.argumentResolverCache.put(parameter, result);
+            break;
+         }
+      }
+   }
+   return result;
+}
+
+如果一个参数被标记为 @RequestBody，当遍历到 RequestResponseBodyMethodProcessor 时就会匹配上。
+匹配代码参考其 RequestResponseBodyMethodProcessor 的 supportsParameter 方法：
+
+@Override
+public boolean supportsParameter(MethodParameter parameter) {
+   return parameter.hasParameterAnnotation(RequestBody.class);
+}
+
+找到 Resolver 后，就会执行 HandlerMethodArgumentResolver#resolveArgument 方法。
+它首先会根据当前的请求（NativeWebRequest）组装出入参对象并对这个对象进行必要的校验，
+校验的执行参考 AbstractMessageConverterMethodArgumentResolver#validateIfApplicable。
+
+protected void validateIfApplicable(WebDataBinder binder, MethodParameter parameter) {
+    Annotation[] annotations = parameter.getParameterAnnotations();
+    for (Annotation ann : annotations) {
+       Validated validatedAnn = AnnotationUtils.getAnnotation(ann, Validated.class);
+       //判断是否需要校验
+       if (validatedAnn != null || ann.annotationType().getSimpleName().startsWith("Valid")) {
+          Object hints = (validatedAnn != null ? validatedAnn.value() : AnnotationUtils.getValue(ann));
+          Object[] validationHints = (hints instanceof Object[] ? (Object[]) hints : new Object[] {hints});
+          //执行校验
+          binder.validate(validationHints);
+          break;
+       }
+    }
+ }
+
+从源码中可以看到，要参数能够被校验，需要以Valid开头的注解，或者@Validated注解，例如：
+public void addStudent(@Valid @RequestBody Student student)
+public void addStudent(@Validated @RequestBody Student student)
+
+@Data
+public class Student {
+    @Size(max = 16)
+    private String name;
+    private short age;
+}
+
+2. 依赖包
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+
+3. validation常用注解
+@AssertFalse
+可以为null,如果不为null的话必须为false
+
+@AssertTrue
+可以为null,如果不为null的话必须为true
+
+@DecimalMax
+设置不能超过最大值
+
+@DecimalMin
+设置不能超过最小值
+
+@Digits
+设置必须是数字且数字整数的位数和小数的位数必须在指定范围内
+
+@Future
+日期必须在当前日期的未来
+
+@Past
+日期必须在当前日期的过去
+
+@Max
+最大不得超过此最大值
+
+@Min
+最大不得小于此最小值
+
+@NotNull
+不能为null，可以是空
+
+@Null
+必须为null
+
+@Pattern
+必须满足指定的正则表达式
+
+@Size
+集合、数组、map等的size()值必须在指定范围内
+
+@Email
+必须是email格式
+
+@Length
+长度必须在指定范围内
+
+@NotBlank
+字符串不能为null,字符串trim()后也不能等于“”
+
+@NotEmpty
+不能为null，集合、数组、map等size()不能为0；字符串trim()后可以等于“”
+
+@Range
+值必须在指定范围内
+
+@URL
+必须是一个URL
+
+
+4. 如果可以传入NULL值，则标记为@Nullable，如果不可以，则标注为@Nonnull
+FileSystemXmlApplicationContext：
+public FileSystemXmlApplicationContext(String[] configLocations, boolean refresh, @Nullable ApplicationContext parent) throws BeansException {
+    super(parent);
+    this.setConfigLocations(configLocations);
+    if (refresh) {
+        this.refresh();
+    } 
+}
+
+5. 嵌套注意
+
+@Data
+class Phone {
+    @Size(max = 10)
+    private String number;
+}
+
+@Data
+public class Student {
+    @Size(max = 10)
+    private String name;
+    private short age;
+    @Valid   
+    private Phone phone; // 必须写Valid，否则嵌套对象不能被校验
+}
+
+在校验执行时，首先会根据 Student 的类型定义找出所有的校验点，然后对 Student 对象实例执行校验，
+这个逻辑过程可以参考代码 ValidatorImpl#validate
+
+@Override
+public final <T> Set<ConstraintViolation<T>> validate(T object, Class<?>... groups) {
+   //省略部分非关键代码
+   Class<T> rootBeanClass = (Class<T>) object.getClass();
+   //获取校验对象类型的“信息”（包含“约束”）
+   BeanMetaData<T> rootBeanMetaData = beanMetaDataManager.getBeanMetaData( rootBeanClass );
+
+   if ( !rootBeanMetaData.hasConstraints() ) {
+      return Collections.emptySet();
+   }
+
+   //省略部分非关键代码
+   //执行校验
+   return validateInContext( validationContext, valueContext, validationOrder );
+}
+
+在组装 BeanMetaData 过程中，会根据成员字段是否标记了 @Valid 来决定（记录）这个字段以后是否做级联校验，
+参考代码 AnnotationMetaDataProvider#getCascadingMetaData：
+
+private CascadingMetaDataBuilder getCascadingMetaData(Type type, AnnotatedElement annotatedElement,
+    Map<TypeVariable<?>, CascadingMetaDataBuilder> containerElementTypesCascadingMetaData) {
+ return CascadingMetaDataBuilder.annotatedObject( type, annotatedElement.isAnnotationPresent( Valid.class ), containerElementTypesCascadingMetaData,
+             getGroupConversions( annotatedElement ) );
+}
+
+6. @Size 约束的执行方法，参考 SizeValidatorForCharSequence#isValid
+public boolean isValid(CharSequence charSequence, ConstraintValidatorContext constraintValidatorContext) {
+    if ( charSequence == null ) {
+       return true;
+    }
+    int length = charSequence.length();
+    return length >= min && length <= max;
+}
+
+7. 自定义校验注解
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE,ElementType.FIELD})
+@Constraint(validatedBy = PasswordValidator.class)//关联类
+public @interface PasswordEqual {
+
+    int min() default 4;
+    int max() default 11;
+
+    String message() default "两次密码不一致";
+
+    //规范模板
+    Class<?> [] groups() default {};
+    Class<? extends Payload> [] payload() default {};
+
+}
+
+关联类：ConstraintValidator<自定义注解类,自定义注解修饰的目标类>
+public class PasswordValidator implements ConstraintValidator<PasswordEqual, PersonDTO> {
+
+    private int min;
+    private int max;
+
+    @Override
+    public void initialize(PasswordEqual constraintAnnotation) {
+        this.min = constraintAnnotation.min();
+        this.max = constraintAnnotation.max();
+    }
+
+    @Override
+    public boolean isValid(PersonDTO personDTO, ConstraintValidatorContext constraintValidatorContext) {
+        String password1 = personDTO.getPassword1();
+        String password2 = personDTO.getPassword2();
+        boolean match = password1.equals(password2) && password1.length()>min && password1.length() <max;
+
+        return match;
+    }
+}
