@@ -13,10 +13,12 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScans;
 
+@ServletComponentScan(basePackages={"com.example.detail.filters"})
 @ComponentScans(value = {@ComponentScan(value = "com.beanissues"), @ComponentScan(value = "com.example.detail"), @ComponentScan(value = "com.aop")})
 @SpringBootApplication
 public class DetailApplication implements ApplicationRunner {

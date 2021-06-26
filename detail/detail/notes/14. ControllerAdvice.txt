@@ -1,0 +1,286 @@
+1. ControllerAdvice 是如何被 Spring 加载并对外暴露的?
+在 Spring Web 的核心配置类 WebMvcConfigurationSupport 中，被 @Bean 修饰的 handlerExceptionResolver()，
+会调用 addDefaultHandlerExceptionResolvers() 来添加默认的异常解析器。
+
+@Bean
+public HandlerExceptionResolver handlerExceptionResolver(
+      @Qualifier("mvcContentNegotiationManager") ContentNegotiationManager contentNegotiationManager) {
+   List<HandlerExceptionResolver> exceptionResolvers = new ArrayList<>();
+   configureHandlerExceptionResolvers(exceptionResolvers);
+   if (exceptionResolvers.isEmpty()) {
+      addDefaultHandlerExceptionResolvers(exceptionResolvers, contentNegotiationManager);
+   }
+   extendHandlerExceptionResolvers(exceptionResolvers);
+   HandlerExceptionResolverComposite composite = new HandlerExceptionResolverComposite();
+   composite.setOrder(0);
+   composite.setExceptionResolvers(exceptionResolvers);
+   return composite;
+}
+
+->addDefaultHandlerExceptionResolvers:
+protected final void addDefaultHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers, ContentNegotiationManager mvcContentNegotiationManager) {
+    ExceptionHandlerExceptionResolver exceptionHandlerResolver = this.createExceptionHandlerExceptionResolver();
+    exceptionHandlerResolver.setContentNegotiationManager(mvcContentNegotiationManager);
+    exceptionHandlerResolver.setMessageConverters(this.getMessageConverters());
+    exceptionHandlerResolver.setCustomArgumentResolvers(this.getArgumentResolvers());
+    exceptionHandlerResolver.setCustomReturnValueHandlers(this.getReturnValueHandlers());
+    if (jackson2Present) {
+        exceptionHandlerResolver.setResponseBodyAdvice(Collections.singletonList(new JsonViewResponseBodyAdvice()));
+    }
+
+    if (this.applicationContext != null) {
+        exceptionHandlerResolver.setApplicationContext(this.applicationContext);
+    }
+
+    exceptionHandlerResolver.afterPropertiesSet();
+    exceptionResolvers.add(exceptionHandlerResolver);
+    ResponseStatusExceptionResolver responseStatusResolver = new ResponseStatusExceptionResolver();
+    responseStatusResolver.setMessageSource(this.applicationContext);
+    exceptionResolvers.add(responseStatusResolver);
+    exceptionResolvers.add(new DefaultHandlerExceptionResolver());
+}
+
+ExceptionHandlerExceptionResolver 类实现了 InitializingBean 接口，并覆写了 afterPropertiesSet():
+public void afterPropertiesSet() {
+   // Do this first, it may add ResponseBodyAdvice beans
+   initExceptionHandlerAdviceCache();
+    //省略非关键代码
+}
+所以，实际是在initializeBean阶段加载的ControllerAdvice。
+
+private void initExceptionHandlerAdviceCache() {
+   //省略非关键代码
+   List<ControllerAdviceBean> adviceBeans = ControllerAdviceBean.findAnnotatedBeans(getApplicationContext());
+   for (ControllerAdviceBean adviceBean : adviceBeans) {
+      Class<?> beanType = adviceBean.getBeanType();
+      if (beanType == null) {
+         throw new IllegalStateException("Unresolvable type for ControllerAdviceBean: " + adviceBean);
+      }
+      ExceptionHandlerMethodResolver resolver = new ExceptionHandlerMethodResolver(beanType);
+      if (resolver.hasExceptionMappings()) {
+         this.exceptionHandlerAdviceCache.put(adviceBean, resolver);
+      }
+ //省略非关键代码
+}
+
+总结一下，WebMvcConfigurationSupport 中的 handlerExceptionResolver() 实例化并注册了一个 ExceptionHandlerExceptionResolver 的实例，
+而所有被 @ControllerAdvice 注解修饰的异常处理器，都会在 ExceptionHandlerExceptionResolver 实例化的时候
+自动扫描并装载在其类成员变量 exceptionHandlerAdviceCache 中。
+
+当第一次请求发生时，DispatcherServlet中的initHandlerExceptionResolvers()将获取所有注册到 Spring 的 HandlerExceptionResolver
+类型的实例，而 ExceptionHandlerExceptionResolver 恰好实现了 HandlerExceptionResolver 接口，
+这些 HandlerExceptionResolver 类型的实例则会被写入到类成员变量 handlerExceptionResolvers中。
+DispatcherServlet#onRefresh -> initStrategies -> handlerExceptionResolvers()
+
+private void initHandlerExceptionResolvers(ApplicationContext context) {
+   this.handlerExceptionResolvers = null;
+
+   if (this.detectAllHandlerExceptionResolvers) {
+      // Find all HandlerExceptionResolvers in the ApplicationContext, including ancestor contexts.
+      Map<String, HandlerExceptionResolver> matchingBeans = BeanFactoryUtils
+            .beansOfTypeIncludingAncestors(context, HandlerExceptionResolver.class, true, false);
+      if (!matchingBeans.isEmpty()) {
+         this.handlerExceptionResolvers = new ArrayList<>(matchingBeans.values());
+         // We keep HandlerExceptionResolvers in sorted order.
+         AnnotationAwareOrderComparator.sort(this.handlerExceptionResolvers);
+      }
+      //省略非关键代码
+}
+
+
+2. ControllerAdvice是如何被 Spring 消费使用的?
+
+protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+   //省略非关键代码
+
+   try {
+      ModelAndView mv = null;
+      Exception dispatchException = null;
+      try {
+         //省略非关键代码
+         //查找当前请求对应的 handler，并执行
+         //省略非关键代码
+      }
+      catch (Exception ex) {
+         dispatchException = ex;
+      }
+      catch (Throwable err) {
+         dispatchException = new NestedServletException("Handler dispatch failed", err);
+      }
+      processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
+}
+//省略非关键代码
+
+可以看到，通过异常捕获，会把异常赋值给dispatchException，再到processDispatchResult进行处理：
+
+
+private void processDispatchResult(HttpServletRequest request, HttpServletResponse response,
+      @Nullable HandlerExecutionChain mappedHandler, @Nullable ModelAndView mv,
+      @Nullable Exception exception) throws Exception {
+   boolean errorView = false;
+   if (exception != null) {
+      if (exception instanceof ModelAndViewDefiningException) {
+         mv = ((ModelAndViewDefiningException) exception).getModelAndView();
+      }
+      else {
+         Object handler = (mappedHandler != null ? mappedHandler.getHandler() : null);
+         mv = processHandlerException(request, response, handler, exception);
+         errorView = (mv != null);
+      }
+   }
+   //省略非关键代码
+
+   -》processHandlerException：
+
+    @Nullable
+    protected ModelAndView processHandlerException(HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) throws Exception {
+        request.removeAttribute(HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE);
+        ModelAndView exMv = null;
+        if (this.handlerExceptionResolvers != null) {
+            Iterator var6 = this.handlerExceptionResolvers.iterator();
+
+            while(var6.hasNext()) {
+                HandlerExceptionResolver resolver = (HandlerExceptionResolver)var6.next();
+                exMv = resolver.resolveException(request, response, handler, ex);
+                if (exMv != null) {
+                    break;
+                }
+            }
+        }
+        // 省略其他代码
+    }
+    从this.handlerExceptionResolvers找到一个处理即break.
+
+3. 过滤器内异常无法被统一处理的大致原因，就是因为ControllerAdvice异常处理发生在：
+DispatcherServlet 中的 doDispatch()。
+而此时，过滤器已经全部执行完毕了。例子参考NotAllowExceptionHandler。
+
+
+4. doDispatch中noHandlerFound处理的过程：
+protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        //省略非关键代码
+         mappedHandler = getHandler(processedRequest);
+         if (mappedHandler == null) {
+            noHandlerFound(processedRequest, response);
+            return;
+         }
+         //省略非关键代码
+}
+
+->noHandlerFound:
+protected void noHandlerFound(HttpServletRequest request, HttpServletResponse response) throws Exception {
+   if (this.throwExceptionIfNoHandlerFound) {
+      throw new NoHandlerFoundException(request.getMethod(), getRequestUri(request),
+            new ServletServerHttpRequest(request).getHeaders());
+   }
+   else {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND);
+   }
+}
+
+noHandlerFound() 的逻辑非常简单，如果 throwExceptionIfNoHandlerFound 属性为 true，
+则直接抛出 NoHandlerFoundException 异常，反之则会进一步获取到对应的请求处理器执行，并将执行结果返回给客户端。
+throw-exception-if-no-handler-found，我们将其加入到 application.properties 配置文件中，设置其值为 true。
+
+实际上这里还存在另一个坑，在 Spring Web 的 WebMvcAutoConfiguration 类中，
+其默认添加的两个 ResourceHandler，一个是用来处理请求路径 /webjars/**，而另一个是 /**。
+
+即便当前请求没有定义任何对应的请求处理器，getHandler() 也一定会获取到一个 Handler 来处理当前请求，
+因为第二个匹配 /** 路径的 ResourceHandler 决定了任何请求路径都会被其处理。
+mappedHandler == null 判断条件永远不会成立，显然就不可能走到 noHandlerFound()
+
+
+在 WebMvcConfigurationSupport 类中，被 @Bean 修饰的 resourceHandlerMapping()，
+它新建了 ResourceHandlerRegistry 类实例，
+并通过 addResourceHandlers() 将 ResourceHandler 注册到 ResourceHandlerRegistry 类实例中：
+
+@Bean
+@Nullable
+public HandlerMapping resourceHandlerMapping(@Qualifier("mvcContentNegotiationManager") ContentNegotiationManager contentNegotiationManager, @Qualifier("mvcConversionService") FormattingConversionService conversionService, @Qualifier("mvcResourceUrlProvider") ResourceUrlProvider resourceUrlProvider) {
+    Assert.state(this.applicationContext != null, "No ApplicationContext set");
+    Assert.state(this.servletContext != null, "No ServletContext set");
+    PathMatchConfigurer pathConfig = this.getPathMatchConfigurer();
+    ResourceHandlerRegistry registry = new ResourceHandlerRegistry(this.applicationContext, this.servletContext, contentNegotiationManager, pathConfig.getUrlPathHelper());
+    this.addResourceHandlers(registry);
+    AbstractHandlerMapping handlerMapping = registry.getHandlerMapping();
+    if (handlerMapping == null) {
+        return null;
+    } else {
+        if (pathConfig.getPatternParser() != null) {
+            handlerMapping.setPatternParser(pathConfig.getPatternParser());
+        } else {
+            handlerMapping.setUrlPathHelper(pathConfig.getUrlPathHelperOrDefault());
+            handlerMapping.setPathMatcher(pathConfig.getPathMatcherOrDefault());
+        }
+
+        handlerMapping.setInterceptors(this.getInterceptors(conversionService, resourceUrlProvider));
+        handlerMapping.setCorsConfigurations(this.getCorsConfigurations());
+        return handlerMapping;
+    }
+}
+
+最终通过 ResourceHandlerRegistry 类实例中的 getHandlerMapping() 返回了 SimpleUrlHandlerMapping 实例，
+它装载了所有 ResourceHandler 的集合并注册到了 Spring 容器中：
+
+->getHandlerMapping
+protected AbstractHandlerMapping getHandlerMapping() {
+   //省略非关键代码
+   Map<String, HttpRequestHandler> urlMap = new LinkedHashMap<>();
+   for (ResourceHandlerRegistration registration : this.registrations) {
+      for (String pathPattern : registration.getPathPatterns()) {
+         ResourceHttpRequestHandler handler = registration.getRequestHandler();
+         //省略非关键代码
+         urlMap.put(pathPattern, handler);
+      }
+   }
+   return new SimpleUrlHandlerMapping(urlMap, this.order);
+}
+
+resourceHandlerMapping方法中的 addResourceHandlers() 最终执行到了 WebMvcAutoConfiguration 类中的 addResourceHandlers()，
+通过这个方法，我们可以知道当前有哪些 ResourceHandler 的集合被注册到了 Spring 容器中：
+
+public void addResourceHandlers(ResourceHandlerRegistry registry) {
+   // 如果 this.resourceProperties.isAddMappings() 为 false，那么会直接返回，后续的两个 ResourceHandler 也不会被添加
+   // 后续的两个 ResourceHandler，一个是用来处理请求路径 /webjars/**， 而另一个是 /**
+   if (!this.resourceProperties.isAddMappings()) {
+      logger.debug("Default resource handling disabled");
+      return;
+   }
+   Duration cachePeriod = this.resourceProperties.getCache().getPeriod();
+   CacheControl cacheControl = this.resourceProperties.getCache().getCachecontrol().toHttpCacheControl();
+   if (!registry.hasMappingForPattern("/webjars/**")) {
+      customizeResourceHandlerRegistration(registry.addResourceHandler("/webjars/**")
+            .addResourceLocations("classpath:/META-INF/resources/webjars/")
+            .setCachePeriod(getSeconds(cachePeriod)).setCacheControl(cacheControl));
+   }
+   String staticPathPattern = this.mvcProperties.getStaticPathPattern();
+   if (!registry.hasMappingForPattern(staticPathPattern)) {
+      customizeResourceHandlerRegistration(registry.addResourceHandler(staticPathPattern)
+            .addResourceLocations(getResourceLocations(this.resourceProperties.getStaticLocations()))
+            .setCachePeriod(getSeconds(cachePeriod)).setCacheControl(cacheControl));
+   }
+}
+
+当第一次请求发生时，DispatcherServlet 中的 initHandlerMappings() 将会获取所有注册到 Spring 的 HandlerMapping 类型的实例，
+而 SimpleUrlHandlerMapping 恰好实现了 HandlerMapping 接口，
+这些 SimpleUrlHandlerMapping 类型的实例则会被写入到类成员变量 handlerMappings 中：
+
+private void initHandlerMappings(ApplicationContext context) {
+   this.handlerMappings = null;
+//省略非关键代码
+   if (this.detectAllHandlerMappings) {
+      // Find all HandlerMappings in the ApplicationContext, including ancestor contexts.
+      Map<String, HandlerMapping> matchingBeans =
+            BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerMapping.class, true, false);
+      if (!matchingBeans.isEmpty()) {
+         this.handlerMappings = new ArrayList<>(matchingBeans.values());
+         // We keep HandlerMappings in sorted order.
+         AnnotationAwareOrderComparator.sort(this.handlerMappings);
+      }
+   }
+   //省略非关键代码
+}
+
+所以要自定义404生效，解决方案在配置文件中写入：
+spring.resources.add-mappings=false
+spring.mvc.throwExceptionIfNoHandlerFound=true

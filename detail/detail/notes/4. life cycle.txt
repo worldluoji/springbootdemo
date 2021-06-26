@@ -36,7 +36,7 @@ protected Object doCreateBean(final String beanName, final RootBeanDefinition mb
 createBeanInstance、 populateBean、 initializeBean，
 分别对应实例化 Bean，注入 Bean 依赖，以及初始化 Bean （例如执行 @PostConstruct 标记的方法 ）这三个功能。
 
-createBeanInstance方法通过依次调用：
+‘createBeanInstance方法通过依次调用：
 DefaultListableBeanFactory.instantiateBean() 
     -> SimpleInstantiationStrategy.instantiate()
         ->最终执行到BeanUtils.instantiateClass()
