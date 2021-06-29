@@ -1,3 +1,369 @@
-1. filter实现的而两种方式：
+1. filter实现的两种方式：
 @ServletComponentScan + @WebFilter -> PermissionFilter
-@Component + Filter -> ReadBodyFilter
+@Component + Filter -> ReadBodyFilter （或者Bean注入的方式）
+两种方式不能同时使用，否则会造成过滤器执行两次。
+
+2. @ServletComponentScan + @WebFilter 的Filter是一种InnerBean
+WebFilter 的全名是 javax.servlet.annotation.WebFilter，
+它并不属于 Spring，而是 Servlet 的规范。当 Spring Boot 项目中使用它时，
+Spring Boot 使用了 org.springframework.boot.web.servlet.FilterRegistrationBean 来包装 @WebFilter 标记的实例。
+从实现上来说，即FilterRegistrationBean#Filter 属性就是 @WebFilter 标记的实例。
+
+这里我们直接检索对 @WebFilter 的使用，可以发现 WebFilterHandler 类使用了它，
+直接在 doHandle() 中加入断点。
+从堆栈上，我们可以看出对 @WebFilter 的处理是在 Spring Boot 启动时，
+而处理的触发点是 ServletComponentRegisteringPostProcessor 这个类。
+它继承了 BeanFactoryPostProcessor 接口，实现对 @WebFilter、@WebListener、@WebServlet 的扫描和处理，
+其中对于 @WebFilter 的处理使用的就是 WebFilterHandler。
+
+
+class ServletComponentRegisteringPostProcessor implements BeanFactoryPostProcessor, ApplicationContextAware {
+    private static final List<ServletComponentHandler> HANDLERS;
+    static {
+       List<ServletComponentHandler> servletComponentHandlers = new ArrayList<>();
+       servletComponentHandlers.add(new WebServletHandler());
+       servletComponentHandlers.add(new WebFilterHandler());
+       servletComponentHandlers.add(new WebListenerHandler());
+       HANDLERS = Collections.unmodifiableList(servletComponentHandlers);
+    }
+    // 省略非关键代码
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+       if (isRunningInEmbeddedWebServer()) {
+          ClassPathScanningCandidateComponentProvider componentProvider = createComponentProvider();
+          for (String packageToScan : this.packagesToScan) {
+             scanPackage(componentProvider, packageToScan);
+          }
+       }
+    }
+    
+   private void scanPackage(ClassPathScanningCandidateComponentProvider componentProvider, String packageToScan) {
+      // 扫描注解
+      for (BeanDefinition candidate : componentProvider.findCandidateComponents(packageToScan)) {
+         if (candidate instanceof AnnotatedBeanDefinition) {
+            // 使用 WebFilterHandler 等进行处理
+            for (ServletComponentHandler handler : HANDLERS) {
+               handler.handle(((AnnotatedBeanDefinition) candidate),
+                     (BeanDefinitionRegistry) this.applicationContext);
+            }
+         }
+      }
+   }
+}
+
+
+最终，WebServletHandler 通过父类 ServletComponentHandler 的模版方法模式，处理了所有被 @WebFilter 注解的类：
+public void doHandle(Map<String, Object> attributes, AnnotatedBeanDefinition beanDefinition,
+    BeanDefinitionRegistry registry) {
+    BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(FilterRegistrationBean.class);
+    builder.addPropertyValue("asyncSupported", attributes.get("asyncSupported"));
+    builder.addPropertyValue("dispatcherTypes", extractDispatcherTypes(attributes));
+    builder.addPropertyValue("filter", beanDefinition);
+    //省略其他非关键代码
+    builder.addPropertyValue("urlPatterns", extractUrlPatterns(attributes));
+    registry.registerBeanDefinition(name, builder.getBeanDefinition());
+}
+
+通过源码+调试信息可以得出如下结论：
+Tomcat 等容器启动时，才会创建 FilterRegistrationBean；
+FilterRegistrationBean 在被创建时（createBean）会创建 PermissionFilter 来装配自身，PermissionFilter 是通过 ResolveInnerBean 来创建的；
+PermissionFilter 实例最终是一种 InnerBean,InnerBean并没有注册到 Spring 容器中，真正注册的是 FilterRegistrationBean。
+
+3. FilterChain 在何处被创建，又是在何处进行初始化调用，从而激活责任链开始链式调用？
+当一个请求来临时，会执行到 StandardWrapperValve 的 invoke()，这个方法会创建 ApplicationFilterChain，
+并通过 ApplicationFilterChain#doFilter() 触发过滤器执行，并最终执行到内部私有方法 internalDoFilter()
+
+public final void invoke(Request request, Response response)
+    throws IOException, ServletException {
+    // 省略非关键代码
+    // 创建filterChain 
+    ApplicationFilterChain filterChain = ApplicationFilterFactory.createFilterChain(request, wrapper, servlet);
+    // 省略非关键代码 
+    try {
+        if ((servlet != null) && (filterChain != null)) {
+            // Swallow output if needed
+            if (context.getSwallowOutput()) {
+                // 省略非关键代码 
+                //执行filterChain
+                filterChain.doFilter(request.getRequest(),
+                                response.getResponse());
+                // 省略非关键代码 
+            }
+    // 省略非关键代码
+    }
+}
+
+首先查看 ApplicationFilterFactory.createFilterChain()，来看下 FilterChain 如何被创建：
+
+public static ApplicationFilterChain createFilterChain(ServletRequest request,
+    Wrapper wrapper, Servlet servlet) {
+    // 省略非关键代码
+    ApplicationFilterChain filterChain = null;
+    if (request instanceof Request) {
+        // 省略非关键代码
+        // 创建Chain 
+        filterChain = new ApplicationFilterChain();
+        // 省略非关键代码
+    }
+    // 省略非关键代码
+    // Add the relevant path-mapped filters to this filter chain
+    for (int i = 0; i < filterMaps.length; i++) {
+        // 省略非关键代码
+        ApplicationFilterConfig filterConfig = (ApplicationFilterConfig)
+            context.findFilterConfig(filterMaps[i].getFilterName());
+        if (filterConfig == null) {
+            continue;
+        }
+        // 增加filterConfig到Chain
+        filterChain.addFilter(filterConfig);
+    }
+
+    // 省略非关键代码
+    return filterChain;
+}
+
+-> addFilter
+
+// 省略非关键代码
+private ApplicationFilterConfig[] filters = new ApplicationFilterConfig[0];
+private int pos = 0;
+private int n = 0；
+// 省略非关键代码
+void addFilter(ApplicationFilterConfig filterConfig) {
+    for(ApplicationFilterConfig filter:filters)
+        if(filter==filterConfig)
+            return;
+
+    if (n == filters.length) {
+        ApplicationFilterConfig[] newFilters =
+            new ApplicationFilterConfig[n + INCREMENT];
+        System.arraycopy(filters, 0, newFilters, 0, n);
+        filters = newFilters;
+    }
+    filters[n++] = filterConfig;
+}
+
+每个被初始化的 Filter 都会通过 filterChain.addFilter()，
+加入到类型为 ApplicationFilterConfig 的类成员数组 Filters 中，并同时更新 Filter 总数计数器 n，
+使其等于 Filters 数组的长度。到这，Spring 就完成了 FilterChain 的创建准备工作.
+
+再看看FilterChain的执行细节，即 ApplicationFilterChain 的 doFilter:
+
+public void doFilter(ServletRequest request, ServletResponse response)
+    throws IOException, ServletException {
+    if( Globals.IS_SECURITY_ENABLED ) {
+        //省略非关键代码
+        internalDoFilter(request,response);
+        //省略非关键代码
+    } else {
+        internalDoFilter(request,response);
+    }
+}
+
+
+private void internalDoFilter(ServletRequest request, ServletResponse response){
+    if (pos < n) {
+        // pos会递增
+        ApplicationFilterConfig filterConfig = filters[pos++];
+        try {
+            Filter filter = filterConfig.getFilter();
+            // 省略非关键代码
+            // 执行filter
+            filter.doFilter(request, response, this);
+            // 省略非关键代码
+        } 
+        // 省略非关键代码
+        return;
+    }
+        // 执行真正实际业务
+        servlet.service(request, response);
+    } 
+    // 省略非关键代码
+}
+pos < n 意味着执行完所有的过滤器，才能通过 servlet.service(request, response) 去执行真正的业务。
+
+4. Filter的Order
+从上面createFilterChain方法我们可以知道，过滤器的执行顺序由成员变量filterMaps决定，
+进一步，继续查找对StandardContext 成员变量 FilterMaps 的写入引用，我们找到了 addFilterMapBefore()：
+
+public void addFilterMapBefore(FilterMap filterMap) {
+    validateFilterMap(filterMap);
+    // Add this filter mapping to our registered set
+    filterMaps.addBefore(filterMap);
+    fireContainerEvent("addFilterMap", filterMap);
+}
+
+这里是通过调用 getServletContextInitializerBeans()，获取所有的 ServletContextInitializer 类型的 Bean，
+并调用该 Bean 的 onStartup()，从而一步步以调用栈显示的顺序，最终调用到 addFilterMapBefore()：
+
+private void selfInitialize(ServletContext servletContext) throws ServletException {
+    prepareWebApplicationContext(servletContext);
+    registerApplicationScope(servletContext);
+    WebApplicationContextUtils.registerEnvironmentBeans(getBeanFactory(), servletContext);
+    for (ServletContextInitializer beans : getServletContextInitializerBeans()) {
+       beans.onStartup(servletContext);
+    }
+}
+
+查看上述代码中的 getServletContextInitializerBeans()，
+因为此方法返回的 ServletContextInitializer 类型的 Bean 集合顺序决定了 addFilterMapBefore() 调用的顺序，
+从而决定了 FilterMaps 内元素的顺序，最终决定了过滤器的执行顺序：
+
+protected Collection<ServletContextInitializer> getServletContextInitializerBeans() {
+    return new ServletContextInitializerBeans(getBeanFactory());
+}
+
+ServletContextInitializerBeans 是集合类，那么我们就可以先查看其 iterator()，看看它遍历的是什么：
+
+@Override
+public Iterator<ServletContextInitializer> iterator() {
+   return this.sortedList.iterator();
+}
+
+我们可以进一步确定下结论：selfInitialize() 中是通过 getServletContextInitializerBeans() 
+获取到的 ServletContextInitializer 类型的 Beans 集合，
+即为 ServletContextInitializerBeans 的类型成员变量 sortedList。
+反过来说，sortedList 中的过滤器 Bean 元素顺序，决定了最终过滤器的执行顺序。
+
+
+public ServletContextInitializerBeans(ListableBeanFactory beanFactory,
+    Class<? extends ServletContextInitializer>... initializerTypes) {
+    this.initializers = new LinkedMultiValueMap<>();
+    this.initializerTypes = (initializerTypes.length != 0) ? Arrays.asList(initializerTypes)
+        : Collections.singletonList(ServletContextInitializer.class);
+    addServletContextInitializerBeans(beanFactory);
+    addAdaptableBeans(beanFactory);
+    // AnnotationAwareOrderComparator决定了Filter的顺序
+    List<ServletContextInitializer> sortedInitializers = this.initializers.values().stream()
+        .flatMap((value) -> value.stream().sorted(AnnotationAwareOrderComparator.INSTANCE))
+        .collect(Collectors.toList());
+    this.sortedList = Collections.unmodifiableList(sortedInitializers);
+    logMappings(this.initializers);
+}
+
+继续查看 AnnotationAwareOrderComparator 比较器，忽略比较器调用的细节过程，其最终是通过两种方式获取比较器需要的 order 值，来决定 sortedInitializers 的排列顺序：
+1）待排序的对象元素自身实现了 Order 接口，则直接通过 getOrder() 获取 order 值；
+2）否则执行 OrderUtils.findOrder() 获取该对象类 @Order 的属性。
+
+继续查看 this.initializers 中的元素在何处被添加，我们最终得知，
+addServletContextInitializerBeans() 以及 addAdaptableBeans() 这两个方法
+均构建了 ServletContextInitializer 子类的实例，并添加到了 this.initializers 成员变量中。
+这两个方法分别对应@WebFilter的方式和@Component方式添加过滤器。
+
+->addServletContextInitializerBeans
+private void addServletContextInitializerBeans(ListableBeanFactory beanFactory) {
+    for (Class<? extends ServletContextInitializer> initializerType : this.initializerTypes) {
+       for (Entry<String, ? extends ServletContextInitializer> initializerBean : getOrderedBeansOfType(beanFactory,
+             initializerType)) {
+          addServletContextInitializerBean(initializerBean.getKey(), initializerBean.getValue(), beanFactory);
+       }
+    }
+ }
+
+ Spring 通过 getOrderedBeansOfType() 实例化了所有 ServletContextInitializer 的子类,
+ 我们可以看出 ServletContextInitializer 的子类包括了 ServletRegistrationBean、FilterRegistrationBean 
+ 以及 ServletListenerRegistrationBean，正好对应了 Servlet 的三大要素。
+
+ FilterRegistrationBean 是 ServletContextInitializer 的子类（实现了 Ordered 接口），
+ 同样由成员变量 order 的值决定其执行的优先级。
+
+回到
+WebFilterHandler->doHandle()：
+ 
+class WebFilterHandler extends ServletComponentHandler {
+
+    WebFilterHandler() {
+       super(WebFilter.class);
+    }
+ 
+    @Override
+    public void doHandle(Map<String, Object> attributes, AnnotatedBeanDefinition beanDefinition,
+          BeanDefinitionRegistry registry) {
+       BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(FilterRegistrationBean.class);
+       builder.addPropertyValue("asyncSupported", attributes.get("asyncSupported"));
+       builder.addPropertyValue("dispatcherTypes", extractDispatcherTypes(attributes));
+       builder.addPropertyValue("filter", beanDefinition);
+       builder.addPropertyValue("initParameters", extractInitParameters(attributes));
+       String name = determineName(attributes, beanDefinition);
+       builder.addPropertyValue("name", name);
+       builder.addPropertyValue("servletNames", attributes.get("servletNames"));
+       builder.addPropertyValue("urlPatterns", extractUrlPatterns(attributes));
+       registry.registerBeanDefinition(name, builder.getBeanDefinition());
+    }
+    // 省略非关键代码
+}
+
+ 所有被 @WebFilter 注解的类，最终都会在此处被包装为 FilterRegistrationBean 类的 BeanDefinition。
+ 虽然 FilterRegistrationBean 也拥有 Ordered 接口，但此处却并没有填充值，
+ 因为这里所有的属性都是从 @WebFilter 对应的属性获取的，而 @WebFilter 本身没有指定可以辅助排序的属性。
+
+ 
+所以更好的方式是：
+@Configuration
+public class FilterConfiguration {
+    @Bean
+    public FilterRegistrationBean authFilter() {
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        registration.setFilter(new ReadBodyFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(2);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean timeCostFilter() {
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        registration.setFilter(new PermissionFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(1);
+        return registration;
+    }
+}
+
+5. addAdaptableBeans()
+从前面我们知道，ServletContextInitializerBeans中，任何通过 @Component 修饰的filter，
+是通过addAdaptableBeans来加入到this.initializers中。
+
+protected void addAdaptableBeans(ListableBeanFactory beanFactory) {
+    // 省略非关键代码
+    addAsRegistrationBean(beanFactory, Filter.class, new FilterRegistrationBeanAdapter());
+    // 省略非关键代码
+ }
+
+->
+
+private <T, B extends T> void addAsRegistrationBean(ListableBeanFactory beanFactory, Class<T> type,
+    Class<B> beanType, RegistrationBeanAdapter<T> adapter) {
+ List<Map.Entry<String, B>> entries = getOrderedBeansOfType(beanFactory, beanType, this.seen);
+ for (Entry<String, B> entry : entries) {
+    String beanName = entry.getKey();
+    B bean = entry.getValue();
+    if (this.seen.add(bean)) {
+       // One that we haven't already seen
+       RegistrationBean registration = adapter.createRegistrationBean(beanName, bean, entries.size());
+       int order = getOrder(bean);
+       registration.setOrder(order);
+       this.initializers.add(type, registration);
+       if (logger.isTraceEnabled()) {
+          logger.trace("Created " + type.getSimpleName() + " initializer for bean '" + beanName + "'; order="
+                + order + ", resource=" + getResourceDescription(beanName, beanFactory));
+       }
+    }
+ }
+}
+
+通过 getOrderedBeansOfType() 创建了所有 Filter 子类的实例，即所有实现 Filter 接口且被 @Component 修饰的类；
+依次遍历这些 Filter 类实例，并通过 RegistrationBeanAdapter 将这些类包装为 RegistrationBean；
+获取 Filter 类实例的 Order 值，并设置到包装类 RegistrationBean 中；
+将 RegistrationBean 添加到 this.initializers。
+
+@WebFilter 会让 addServletContextInitializerBeans() 实例化，并注册所有动态生成的 FilterRegistrationBean 类型的过滤器；
+@Component 会让 addAdaptableBeans() 实例化所有实现 Filter 接口的类，然后再逐一包装为 FilterRegistrationBean 类型的过滤器。
+
+所以Order注解对第二种@Component的方式是有效的。
+@Slf4j
+@Order(1)
+@Component
+public class TimeCostFilter implements Filter {
+   //省略非关键代码
+}

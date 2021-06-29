@@ -1,6 +1,5 @@
 package com.example.detail.exceptions.handlers;
 
-import com.example.detail.exceptions.NotAllowException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
