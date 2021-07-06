@@ -1,27 +1,24 @@
 package com.example.detail.models;
 
-
-import javax.validation.constraints.Size;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import javax.persistence.*;
 
 @Entity
-@Table(name="student")
+@Table(name="card")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Student {
+public class Card {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Size(max=16)
-    @Column
-    private String name;
+    @Column(name="student_id")
+    private Integer studentId;
 
     @Column
-    private short age;
+    private Integer balance;
 }

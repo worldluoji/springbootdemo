@@ -370,3 +370,123 @@ public boolean isRollbackOnly() {
 而在 AbstractPlatformTransactionManager.processRollback() 进行 rollback 处理时，
 因为 status.isNewTransaction() 会因为它处于一个新的事务中而返回 true，所以它走入到了另一个分支，
 执行了 doRollback() 操作，让这个子事务单独回滚，不会影响到主事务。
+
+4. Spring事务是可以对多个数据源生效
+表格准备：
+CREATE TABLE `student` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `name` varchar(11) DEFAULT NULL,
+    `age` int(3) DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `card` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `student_id` int(11) DEFAULT NULL,
+    `balance` int(11) DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+我用docker运行了两个MySql数据库，分别对应3306端口和3309端口。
+其中student表在3306端口的MySql，card表在3309端口的Mysql。
+
+Spring提供了一个抽象类 AbstractRoutingDataSource，通过实现这个抽象类，我们可以实现自定义的数据库切换。
+
+
+public abstract class AbstractRoutingDataSource extends AbstractDataSource implements InitializingBean {
+
+    @Nullable
+    private Map<Object, Object> targetDataSources;
+ 
+    @Nullable
+    private Object defaultTargetDataSource;
+ 
+    private boolean lenientFallback = true;
+ 
+    private DataSourceLookup dataSourceLookup = new JndiDataSourceLookup();
+ 
+    @Nullable
+    private Map<Object, DataSource> resolvedDataSources;
+ 
+    @Nullable
+    private DataSource resolvedDefaultDataSource;
+  
+    //省略非关键代码
+}
+
+targetDataSources 保存了 key(数据源的名字) 和数据库连接的映射关系；
+defaultTargetDataSource 标识默认的连接；
+resolvedDataSources 存储数据库标识和数据源的映射关系。
+
+AbstractRoutingDataSource 实现了 InitializingBean 接口，并覆写了 afterPropertiesSet()。
+该方法会在初始化 Bean 的时候执行，将多个 DataSource 初始化到 resolvedDataSources。
+这里的 targetDataSources 属性存储了将要切换的多数据源 Bean 信息。
+
+
+@Override
+public void afterPropertiesSet() {
+   if (this.targetDataSources == null) {
+      throw new IllegalArgumentException("Property 'targetDataSources' is required");
+   }
+   this.resolvedDataSources = new HashMap<>(this.targetDataSources.size());
+   this.targetDataSources.forEach((key, value) -> {
+      Object lookupKey = resolveSpecifiedLookupKey(key);
+      DataSource dataSource = resolveSpecifiedDataSource(value);
+      this.resolvedDataSources.put(lookupKey, dataSource);
+   });
+   if (this.defaultTargetDataSource != null) {
+      this.resolvedDefaultDataSource = resolveSpecifiedDataSource(this.defaultTargetDataSource);
+   }
+}
+
+
+@Override
+public Connection getConnection() throws SQLException {
+   return determineTargetDataSource().getConnection();
+}
+
+@Override
+public Connection getConnection(String username, String password) throws SQLException {
+   return determineTargetDataSource().getConnection(username, password);
+}
+
+->
+
+protected DataSource determineTargetDataSource() {
+    Assert.notNull(this.resolvedDataSources, "DataSource router not initialized");
+    Object lookupKey = determineCurrentLookupKey();
+    DataSource dataSource = this.resolvedDataSources.get(lookupKey);
+    if (dataSource == null && (this.lenientFallback || lookupKey == null)) {
+       dataSource = this.resolvedDefaultDataSource;
+    }
+    if (dataSource == null) {
+       throw new IllegalStateException("Cannot determine target DataSource for lookup key [" + lookupKey + "]");
+    }
+    return dataSource;
+}
+
+选择哪个数据源又是由 determineCurrentLookupKey() 来决定的，此方法是抽象方法，
+需要我们继承 AbstractRoutingDataSource 抽象类来重写此方法。
+该方法返回一个 key，该 key 是 Bean 中的 beanName，并赋值给 lookupKey，
+由此 key 可以通过 resolvedDataSources 属性的键来获取对应的 DataSource 值，从而达到数据源切换的效果。
+protected abstract Object determineCurrentLookupKey();
+
+This is cheap, show me the code:
+两个数据源配置：
+StudentDataSourceConfig
+CardDataSourceConfig
+
+MyDataSource： 
+继承AbstractRoutingDataSource，复写determineCurrentLookupKey()方法
+
+MutiDataSourceConfiguration：
+将前面配置的两个数据源，注入到MyDataSource之中使用。
+
+DataSourceSwitch：
+用于自动切换数据源的Sping AOP
+
+
+
+
+
+
+ 
