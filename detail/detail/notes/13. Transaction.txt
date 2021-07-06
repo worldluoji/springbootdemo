@@ -428,6 +428,7 @@ public void afterPropertiesSet() {
       throw new IllegalArgumentException("Property 'targetDataSources' is required");
    }
    this.resolvedDataSources = new HashMap<>(this.targetDataSources.size());
+   // 这里可以看出targetDataSources和resolvedDataSources的关系
    this.targetDataSources.forEach((key, value) -> {
       Object lookupKey = resolveSpecifiedLookupKey(key);
       DataSource dataSource = resolveSpecifiedDataSource(value);
@@ -438,7 +439,23 @@ public void afterPropertiesSet() {
    }
 }
 
+// 可以看到，如果不覆写该方法，targetDataSources和resolvedDataSources的key是一样的
+protected Object resolveSpecifiedLookupKey(Object lookupKey) {
+   return lookupKey;
+}
 
+protected DataSource resolveSpecifiedDataSource(Object dataSource) throws IllegalArgumentException {
+   if (dataSource instanceof DataSource) {
+      return (DataSource)dataSource;
+   } else if (dataSource instanceof String) {
+      return this.dataSourceLookup.getDataSource((String)dataSource);
+   } else {
+      throw new IllegalArgumentException("Illegal data source value - only [javax.sql.DataSource] and String supported: " + dataSource);
+   }
+}
+
+
+AbstractRoutingDataSource中的getConnection方法用于获取数据库连接：
 @Override
 public Connection getConnection() throws SQLException {
    return determineTargetDataSource().getConnection();
@@ -450,7 +467,6 @@ public Connection getConnection(String username, String password) throws SQLExce
 }
 
 ->
-
 protected DataSource determineTargetDataSource() {
     Assert.notNull(this.resolvedDataSources, "DataSource router not initialized");
     Object lookupKey = determineCurrentLookupKey();
@@ -466,9 +482,16 @@ protected DataSource determineTargetDataSource() {
 
 选择哪个数据源又是由 determineCurrentLookupKey() 来决定的，此方法是抽象方法，
 需要我们继承 AbstractRoutingDataSource 抽象类来重写此方法。
-该方法返回一个 key，该 key 是 Bean 中的 beanName，并赋值给 lookupKey，
-由此 key 可以通过 resolvedDataSources 属性的键来获取对应的 DataSource 值，从而达到数据源切换的效果。
-protected abstract Object determineCurrentLookupKey();
+这里的lookupKey实际就是下面的"core"和"card"：
+public MyDataSource createDataSource() {        
+   MyDataSource myDataSource = new MyDataSource();        
+   Map<Object, Object> map = new HashMap<>();
+   map.put("core", studentDataSource);        
+   map.put("card", cardDataSource);        
+   myDataSource.setTargetDataSources(map);        
+   myDataSource.setDefaultTargetDataSource(studentDataSource);        
+   return myDataSource;    
+}
 
 This is cheap, show me the code:
 两个数据源配置：
@@ -482,7 +505,7 @@ MutiDataSourceConfiguration：
 将前面配置的两个数据源，注入到MyDataSource之中使用。
 
 DataSourceSwitch：
-用于自动切换数据源的Sping AOP
+用于自动切换数据源的Spring AOP
 
 
 
