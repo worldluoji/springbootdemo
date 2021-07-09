@@ -5,8 +5,15 @@
         </div>
         <div>
             <div class="search-area">
-                <input type="search" id="search-input" name="search-input" 
+                <input type="search" id="search-input" name="search-input" autocomplete="off"
                 placeholder="search user by name or address" v-model="keyword" @keyup.enter="getUserInfo"/>
+            </div>
+            <div class="options" v-show="options && options.length > 0">
+                <ul class="option-list">
+                    <li calss="option-item" v-for="(option,index) in options" :key="index" @click="choose(option)">
+                        <span>{{ option }}</span>
+                    </li>
+                </ul>
             </div>
         </div>
         <div class="results" v-show="results && results.length > 0">
@@ -48,6 +55,7 @@ export default {
             keyword: '',
             results: [],
             options: [],
+            justChoose: false,
             lastTime: 0
         } 
     },
@@ -56,6 +64,7 @@ export default {
             if (this.keyword == null || this.keyword === '') {
                 return
             }
+            this.options = []
             axios.post("/search", {
                 keyword: this.keyword
             })
@@ -87,10 +96,19 @@ export default {
                 console.log(error);
                 this.lastTime = 0;
             });
+        },
+        choose (text) {
+            this.options = [];
+            this.justChoose = true;
+            this.keyword = text;
         }
     },
     watch: {
         keyword (newVal) {
+            if (this.justChoose) {
+                this.justChoose = false;
+                return;
+            }
             if (this.lastTime === 0) { 
                 this.lastTime = setTimeout(()=>{
                     this.getSuggustOptions(newVal);
@@ -110,7 +128,7 @@ export default {
     .logo {
         width: 25vw;
         border-radius: 50%;
-        margin-top: 2vh;
+        margin-top: 5vh;
     }
 
     .bk {
@@ -126,7 +144,6 @@ export default {
 
     .search-area {
         margin-top: 3vh;
-		padding: 0.5rem;
         text-align: center;
     }
 
@@ -137,11 +154,11 @@ export default {
     #search-input {
         padding: 0.5rem;
         font-size: 1rem;
-        border-radius: 30px;
+        border-radius: 3px;
         width: 36vw;
         opacity: 1;
         outline: none;
-        text-align: center;
+        text-align: left;
     }
 
     table {
@@ -187,4 +204,32 @@ export default {
     .pure-table td {
         background-color: transparent;
     }
+
+    .options {
+        display: absolute;
+        margin-top: 0;
+    }
+
+    .option-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    li span:hover {
+        background-color: rgba(245, 245, 245, 0.933);
+    }
+
+    li span {
+        border: 1px solid #ddd; /* 链接添加边框 */
+        background-color: white; 
+        text-decoration: none;
+        font-size: 1rem;
+        padding: 0.5rem; 
+        color: black; 
+        display: block;
+        width: 34vw; 
+        margin: auto;
+    }
+
 </style>
