@@ -1,38 +1,38 @@
 <template>
-    <div>
-        <div class="bk">
-            <div>
-                <img  class="logo" src="../assets/logo.png">
-            </div>
+    <div class="bk">
+        <div>
+            <img  class="logo" src="../assets/logo.jpg">
+        </div>
+        <div>
             <div class="search-area">
                 <input type="search" id="search-input" name="search-input" 
                 placeholder="search user by name or address" v-model="keyword" @keyup.enter="getUserInfo"/>
             </div>
-            <div class="results" v-show="results && results.length > 0">
-                <table class="pure-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>AccountNumber</th>
-                            <th>Name</th>
-                            <th>City</th>
-                            <th>Address</th>
-                            <th>Balance</th>
-                        </tr>
-                    </thead>
-                
-                    <tbody>
-                        <tr v-for="(item,index) in results" :key="item.accountNumber">
-                            <td>{{ index + 1}}</td>
-                            <td>{{ item.accountNumber }}</td>
-                            <td>{{ item.firstname}} {{ item.lastname }}</td>
-                            <td>{{ item.city }}</td>
-                            <td>{{ item.address }}</td>
-                            <td>{{ item.balance }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        </div>
+        <div class="results" v-show="results && results.length > 0">
+            <table class="pure-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>AccountNumber</th>
+                        <th>Name</th>
+                        <th>City</th>
+                        <th>Address</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+            
+                <tbody>
+                    <tr v-for="(item,index) in results" :key="item.accountNumber">
+                        <td>{{ index + 1}}</td>
+                        <td>{{ item.accountNumber }}</td>
+                        <td>{{ item.firstname}} {{ item.lastname }}</td>
+                        <td>{{ item.city }}</td>
+                        <td>{{ item.address }}</td>
+                        <td>{{ item.balance }}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </template>
@@ -40,10 +40,15 @@
 <script>
 import axios from 'axios'
 export default {
+    created () {
+        this.lastTime = 0;
+    },
     data () {
         return {
             keyword: '',
-            results: []
+            results: [],
+            options: [],
+            lastTime: 0
         } 
     },
     methods: {
@@ -63,6 +68,39 @@ export default {
             .catch( (error) => {
                 console.log(error);
             });
+        },
+        async getSuggustOptions (newVal) {
+            if (newVal == null || newVal === '') {
+                return
+            }
+            axios.post("/suggest", {
+                keyword: newVal
+            })
+            .then( (response) => {
+                if (response.status === 200) {
+                    console.log(response.data);
+                    this.options = response.data;
+                }
+                this.lastTime = 0;
+            })
+            .catch( (error) => {
+                console.log(error);
+                this.lastTime = 0;
+            });
+        }
+    },
+    watch: {
+        keyword (newVal) {
+            if (this.lastTime === 0) { 
+                this.lastTime = setTimeout(()=>{
+                    this.getSuggustOptions(newVal);
+                }, 2000);
+            } else{
+                clearTimeout(this.lastTime)
+                this.lastTime = setTimeout(()=>{
+                   this.getSuggustOptions(newVal);
+                }, 2000);
+            }
         }
     }
 }
@@ -70,37 +108,46 @@ export default {
 
 <style scoped>
     .logo {
-        height: 30vh;
-        width: 30vw;
+        width: 25vw;
+        border-radius: 50%;
+        margin-top: 2vh;
     }
 
     .bk {
         display: grid;
-        place-items: center;
+        /* place-items: center;*/
         background: lightblue;
         resize: both;
         overflow: auto;
         width: 100vw;
         height: 100vh;
+        grid-template-rows: auto auto 1fr;
     }
 
     .search-area {
+        margin-top: 3vh;
 		padding: 0.5rem;
         text-align: center;
     }
 
+    .results {
+        margin-top: 3vh;
+    }
+
     #search-input {
         padding: 0.5rem;
-        font-size: 2rem;
+        font-size: 1rem;
         border-radius: 30px;
         width: 36vw;
         opacity: 1;
         outline: none;
+        text-align: center;
     }
 
     table {
         border-collapse: collapse;
         border-spacing: 0;
+        margin: auto;
     }
     
     td,th {
