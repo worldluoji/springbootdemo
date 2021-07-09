@@ -7,13 +7,16 @@
             <div class="search-area">
                 <input type="search" id="search-input" name="search-input" autocomplete="off"
                 placeholder="search user by name or address" v-model="keyword" @keyup.enter="getUserInfo"/>
+                <div class="options" v-show="options && options.length > 0">
+                    <ul class="option-list">
+                        <li calss="option-item" v-for="(option,index) in options" :key="index" @click="choose(option)">
+                            <span>{{ option }}</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <div class="options" v-show="options && options.length > 0">
-                <ul class="option-list">
-                    <li calss="option-item" v-for="(option,index) in options" :key="index" @click="choose(option)">
-                        <span>{{ option }}</span>
-                    </li>
-                </ul>
+            <div>
+                <input type="button" id="search-btn" value="search" @click="getUserInfo"/>
             </div>
         </div>
         <div class="results" v-show="results && results.length > 0">
@@ -55,7 +58,6 @@ export default {
             keyword: '',
             results: [],
             options: [],
-            justChoose: false,
             lastTime: 0
         } 
     },
@@ -99,16 +101,11 @@ export default {
         },
         choose (text) {
             this.options = [];
-            this.justChoose = true;
             this.keyword = text;
         }
     },
     watch: {
         keyword (newVal) {
-            if (this.justChoose) {
-                this.justChoose = false;
-                return;
-            }
             if (this.lastTime === 0) { 
                 this.lastTime = setTimeout(()=>{
                     this.getSuggustOptions(newVal);
@@ -145,6 +142,13 @@ export default {
     .search-area {
         margin-top: 3vh;
         text-align: center;
+    }
+
+    #search-btn {
+        margin-top: 1vw;
+        font-size: 1rem;
+        padding: 0.3rem;
+        border-radius: 5px;
     }
 
     .results {
