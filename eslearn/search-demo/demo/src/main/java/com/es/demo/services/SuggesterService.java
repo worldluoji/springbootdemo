@@ -24,10 +24,55 @@ import org.elasticsearch.client.*;
 @Service
 public class SuggesterService {
 
+    private final String suggesterTemplate="{%n" +
+            "  \"suggest\": {%n" +
+            "    \"firstname-suggestion\": {%n" +
+            "      \"text\": \"%s\",%n" +
+            "      \"phrase\": {%n" +
+            "        \"field\": \"firstname\",%n" +
+            "        \"max_errors\":2,%n" +
+            "        \"confidence\":0,%n" +
+            "        \"direct_generator\":[{%n" +
+            "          \"field\":\"firstname\",%n" +
+            "          \"suggest_mode\":\"popular\"%n" +
+            "        }%n" +
+            "        ]%n" +
+            "      }%n" +
+            "    },%n" +
+            "    \"lastname-suggestion\": {%n" +
+            "      \"text\": \"%s\",%n" +
+            "      \"phrase\": {%n" +
+            "        \"field\": \"lastname\",%n" +
+            "        \"max_errors\":2,%n" +
+            "        \"confidence\":0,%n" +
+            "        \"direct_generator\":[{%n" +
+            "          \"field\":\"lastname\",%n" +
+            "          \"suggest_mode\":\"popular\"%n" +
+            "        }%n" +
+            "        ]%n" +
+            "      }%n" +
+            "    },%n" +
+            "    \"address-suggestion\": {%n" +
+            "      \"text\": \"%s\",%n" +
+            "      \"phrase\": {%n" +
+            "        \"field\": \"address\",%n" +
+            "        \"max_errors\":2,%n" +
+            "        \"confidence\":0,%n" +
+            "        \"direct_generator\":[{%n" +
+            "          \"field\":\"address\",%n" +
+            "          \"suggest_mode\":\"popular\"%n" +
+            "        }%n" +
+            "        ]%n" +
+            "      }%n" +
+            "    }%n" +
+            "  }%n" +
+            "}";
+
     @Autowired
     private RestHighLevelClient restHighLevelClient;
 
     private RestClient lowLevelClient;
+
 
     @PostConstruct
     public void init() {
@@ -36,29 +81,14 @@ public class SuggesterService {
 
     public List<String> getSuggestedWords(String input) {
         List<String> list = new ArrayList<>();
-        String reqestContent = String.format("{" +
-            "\"suggest\": {%n"+
-            "  \"firstname-suggestion\": {%n" +
-            "    \"text\": \"%s\",%n" +
-            "    \"phrase\": {%n" +
-            "      \"field\": \"firstname\",%n" +
-            "      \"max_errors\":2,%n" +
-            "      \"confidence\":0,%n" +
-            "      \"direct_generator\":[{%n" +
-            "        \"field\":\"firstname\",%n" +
-            "        \"suggest_mode\":\"Popular\"%n" +
-            "      }]%n" +
-            "    }%n" +
-            "  }%n" +
-            "}%n" +
-          "}%n", input);
+        String requestContent = String.format(suggesterTemplate, input, input, input);
         Request request = new Request("POST", "/bank/_doc/_search");
-        request.setJsonEntity(reqestContent);
+        request.setJsonEntity(requestContent);
         Response resp;
         try {
             resp = lowLevelClient.performRequest(request);
         } catch(Exception e) {
-            log.error("fail to get info from es server", e);
+            log.warn("fail to get info from es server", e);
             // 因为接口主要是获取自动补全提示信息，获取不到，不报错。
             return list;
         }
@@ -71,7 +101,7 @@ public class SuggesterService {
         String responseBody;
         try {
             responseBody = EntityUtils.toString(resp.getEntity());
-            log.info(responseBody);
+            log.debug(responseBody);
         } catch (Exception e) {
             log.error("fail to convert resp to json", e);
             return list;
@@ -83,9 +113,9 @@ public class SuggesterService {
     private void processJsonReesult(String responseBody, List<String> resultList) {
         JSONObject jsonObject = JSON.parseObject(responseBody);
         JSONObject suggestObject = jsonObject.getJSONObject("suggest");
-        Set<Option> set = new TreeSet<>((s1,s2) -> (int)Math.ceil(s2.getScore() - s1.getScore()));
+        Set<Option> set =  new HashSet<>();
         for (Map.Entry<String, Object> e : suggestObject.entrySet()) {
-            log.info(e.getKey());
+            log.debug(e.getKey());
             JSONArray array = (JSONArray)e.getValue();
             for (Object item : array) {
                 JSONObject obj = (JSONObject)item;
