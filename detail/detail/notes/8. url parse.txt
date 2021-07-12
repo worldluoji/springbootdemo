@@ -246,3 +246,11 @@ public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
 但是它要求我们标记 @DateTimeFormat。很明显，我们的参数 Date 并没有标记这个注解，
 所以这里为了使用这个转化器，我们可以使用上它并提供合适的格式：
 @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss") Date date
+
+5. @PathVariable，@RequestParam，@RequestBody 的比较
+
+注解	            支持的类型	支持的请求类型	            支持的Content-Type	                                 请求示例
+@PathVariable	url	GET	                                  所有	                                                 /test/{id}
+@RequestParam	url	GET	                                  所有	                                                 /test?id=1
+                                  Body	POST/PUT/DELETE/PATCH      form-data或x-www.form-urlencode      id:1
+@RequestBody	Body	POST/PUT/DELETE/PATCH	json	                                                 {"id":1}
