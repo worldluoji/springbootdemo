@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
-@SpringBootApplication//(scanBasePackages = {"com.springboot.redis.lockdemo.demo"})
+@SpringBootApplication
 public class DemoApplication implements ApplicationRunner {
 
     @Autowired
